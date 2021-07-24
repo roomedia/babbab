@@ -7,10 +7,10 @@ import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.roomedia.bobbob.extension.startActivity
 import com.roomedia.bobbob.extension.startActivityForResult
-import com.roomedia.bobbob.ui.main.ActivityMain
+import com.roomedia.bobbob.ui.main.MainActivity
 import timber.log.Timber
 
-class ActivityLogin : AppCompatActivity() {
+class LoginActivity : AppCompatActivity() {
 
     private val signInLauncher = registerForActivityResult(
         FirebaseAuthUIActivityResultContract()
@@ -41,7 +41,7 @@ class ActivityLogin : AppCompatActivity() {
         val response = result.idpResponse
         if (result.resultCode == RESULT_OK) {
 //            val user = FirebaseAuth.getInstance().currentUser
-            startActivity(ActivityMain::class.java)
+            startActivity(MainActivity::class.java)
             return
         }
         Timber.w(response?.error)

@@ -12,7 +12,7 @@ import com.roomedia.bobbob.databinding.ActivityMainBinding
 import com.roomedia.bobbob.databinding.PopupSendPreviewBinding
 import java.io.File
 
-class ActivityMain : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
 
     private var latestTmpUri: Uri? = null
     private val takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { isSuccess ->
