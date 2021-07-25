@@ -24,22 +24,20 @@ import timber.log.Timber
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Timber.tag(TAG).d("From: ${remoteMessage.from}")
-        remoteMessage.notification?.apply {
-            val sender = body ?: ""
-            val imageUrl = imageUrl ?: Uri.EMPTY
-            sendNotification(sender, imageUrl)
-        }
+        Timber.d("From: ${remoteMessage.from}")
+        val sender = remoteMessage.notification?.body ?: return
+        val imageUrl = remoteMessage.notification?.imageUrl ?: return
+        sendNotification(sender, imageUrl)
     }
 
     override fun onNewToken(token: String) {
-        Timber.tag(TAG).d("Refreshed token: $token")
+        Timber.d("Refreshed token: $token")
         sendRegistrationToServer(token)
     }
 
     private fun sendRegistrationToServer(token: String?) {
         // TODO: Implement this method to send token to your app server.
-        Timber.tag(TAG).d("sendRegistrationTokenToServer($token)")
+        Timber.d("sendRegistrationTokenToServer($token)")
     }
 
     private fun sendNotification(sender: String, imageUrl: Uri) = CoroutineScope(Dispatchers.IO).launch {
@@ -56,7 +54,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .let { (it.drawable as BitmapDrawable).bitmap }
         val notificationBuilder = NotificationCompat.Builder(baseContext, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("$sender 🙋💬🍚🤤")
+            .setContentTitle(sender)
+            .setContentText("🙋💬🍚🤤")
             .setLargeIcon(bitmapImage)
             .setStyle(NotificationCompat.BigPictureStyle().bigPicture(bitmapImage))
             .setAutoCancel(true)
@@ -71,9 +70,5 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
         notificationManager.notify(0, notificationBuilder.build())
-    }
-
-    companion object {
-        private const val TAG = "MyFirebaseMsgService"
     }
 }

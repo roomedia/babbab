@@ -2,20 +2,14 @@ package com.roomedia.babbab.ui.main
 
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.messaging.FirebaseMessaging
 import com.roomedia.babbab.BuildConfig
-import com.roomedia.babbab.R
 import com.roomedia.babbab.databinding.ActivityMainBinding
 import com.roomedia.babbab.databinding.PopupSendPreviewBinding
-import timber.log.Timber
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
