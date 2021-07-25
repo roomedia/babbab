@@ -1,15 +1,21 @@
-package com.roomedia.bobbob.ui.main
+package com.roomedia.babbab.ui.main
 
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
-import com.roomedia.bobbob.BuildConfig
-import com.roomedia.bobbob.databinding.ActivityMainBinding
-import com.roomedia.bobbob.databinding.PopupSendPreviewBinding
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
+import com.roomedia.babbab.BuildConfig
+import com.roomedia.babbab.R
+import com.roomedia.babbab.databinding.ActivityMainBinding
+import com.roomedia.babbab.databinding.PopupSendPreviewBinding
+import timber.log.Timber
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
@@ -33,6 +39,20 @@ class MainActivity : AppCompatActivity() {
         binding.buttonSendPicture.setOnClickListener {
             takeImage()
         }
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Timber.tag("TAG").w(task.exception, "Fetching FCM registration token failed")
+                return@OnCompleteListener
+            }
+
+            // Get new FCM registration token
+            val token = task.result
+
+            // Log and toast
+            val msg = getString(R.string.msg_token_fmt, token)
+            Timber.d(msg)
+            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+        })
     }
 
     private fun showSendQuestionPopup() {
@@ -73,6 +93,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("✔️") { _, _ ->
                 // TODO: send picture notification using firebase
             }
+            .setCancelable(false)
             .show()
     }
 }

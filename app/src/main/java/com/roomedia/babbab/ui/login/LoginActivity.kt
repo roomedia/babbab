@@ -1,13 +1,13 @@
-package com.roomedia.bobbob.ui.login
+package com.roomedia.babbab.ui.login
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.roomedia.bobbob.extension.startActivity
-import com.roomedia.bobbob.extension.startActivityForResult
-import com.roomedia.bobbob.ui.main.MainActivity
+import com.roomedia.babbab.extension.startActivity
+import com.roomedia.babbab.extension.startActivityForResult
+import com.roomedia.babbab.ui.main.MainActivity
 import timber.log.Timber
 
 class LoginActivity : AppCompatActivity() {
