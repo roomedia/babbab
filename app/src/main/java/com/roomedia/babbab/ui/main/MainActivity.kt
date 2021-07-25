@@ -39,20 +39,6 @@ class MainActivity : AppCompatActivity() {
         binding.buttonSendPicture.setOnClickListener {
             takeImage()
         }
-        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Timber.tag("TAG").w(task.exception, "Fetching FCM registration token failed")
-                return@OnCompleteListener
-            }
-
-            // Get new FCM registration token
-            val token = task.result
-
-            // Log and toast
-            val msg = getString(R.string.msg_token_fmt, token)
-            Timber.d(msg)
-            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-        })
     }
 
     private fun showSendQuestionPopup() {
