@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.roomedia.babbab.BuildConfig
+import com.roomedia.babbab.R
 import com.roomedia.babbab.databinding.ActivityMainBinding
 import com.roomedia.babbab.databinding.PopupSendPreviewBinding
 import java.io.File
@@ -37,7 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSendQuestionPopup() {
         AlertDialog.Builder(this)
-            .setTitle("💭🍚🥯🧇🍟🍜🍛❓❓❓️")
+            .setTitle(getString(R.string.question_text))
             .setNegativeButton("❌", null)
             .setPositiveButton("✔️") { _, _ ->
                 // TODO: send picture notification using firebase
@@ -67,7 +68,7 @@ class MainActivity : AppCompatActivity() {
         binding.imagePreview.setImageURI(uri)
 
         AlertDialog.Builder(this)
-            .setTitle("🍚🥯🧇🍟🍜🍛")
+            .setTitle(getString(R.string.answer_text))
             .setView(binding.root)
             .setNegativeButton("❌", null)
             .setPositiveButton("✔️") { _, _ ->

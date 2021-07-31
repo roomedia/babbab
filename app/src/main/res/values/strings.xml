@@ -2,4 +2,7 @@
     <string name="app_name">밥밥</string>
     <string name="default_notification_channel_id" translatable="false">fcm_default_channel</string>
     <string name="default_notification_channel_name" translatable="true">🍚🍚</string>
+
+    <string name="question_text" translatable="false">💭🍚🥯🧇🍟🍜🍛???</string>
+    <string name="answer_text" translatable="false">🙋💬🍚🤤</string>
 </resources>
