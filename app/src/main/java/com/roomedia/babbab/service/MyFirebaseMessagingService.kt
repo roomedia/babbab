@@ -27,10 +27,51 @@ import timber.log.Timber
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Timber.d("From: ${remoteMessage.from}")
-        val sender = remoteMessage.notification?.body ?: return
-        val imageUrl = remoteMessage.notification?.imageUrl
-        sendNotification(sender, imageUrl)
+        CoroutineScope(Dispatchers.IO).launch {
+            Timber.d("From: ${remoteMessage.from}")
+            val intent = Intent(baseContext, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            val pendingIntent =
+                PendingIntent.getActivity(baseContext, 0, intent, PendingIntent.FLAG_ONE_SHOT)
+
+            val channelId = getString(R.string.default_notification_channel_id)
+            val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+            val title = remoteMessage.notification?.title ?: ""
+            val body = remoteMessage.notification?.body ?: ""
+            val image = remoteMessage.notification?.imageUrl?.let { imageUrl ->
+                ImageRequest.Builder(baseContext)
+                    .data(imageUrl)
+                    .build()
+                    .let { ImageLoader(baseContext).execute(it) }
+                    .let { (it.drawable as BitmapDrawable).bitmap }
+            }
+
+            val notificationBuilder = NotificationCompat.Builder(baseContext, channelId)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setAutoCancel(true)
+                .setSound(defaultSoundUri)
+                .setContentIntent(pendingIntent)
+                .run {
+                    if (image == null) return@run this
+                    setLargeIcon(image)
+                    setStyle(NotificationCompat.BigPictureStyle().bigPicture(image))
+                }
+
+            val notificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    channelId,
+                    getString(R.string.default_notification_channel_name),
+                    NotificationManager.IMPORTANCE_DEFAULT
+                )
+                notificationManager.createNotificationChannel(channel)
+            }
+            notificationManager.notify(0, notificationBuilder.build())
+        }
     }
 
     override fun onNewToken(token: String) {
@@ -41,45 +82,5 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private fun sendRegistrationToServer(token: String?) {
         // TODO: Implement this method to send token to your app server.
         Timber.d("sendRegistrationTokenToServer($token)")
-    }
-
-    private fun sendNotification(sender: String, imageUrl: Uri? = null) = CoroutineScope(Dispatchers.IO).launch {
-        val intent = Intent(baseContext, MainActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        val pendingIntent = PendingIntent.getActivity(baseContext, 0, intent, PendingIntent.FLAG_ONE_SHOT)
-
-        val channelId = getString(R.string.default_notification_channel_id)
-        val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-
-        val notificationBuilder = NotificationCompat.Builder(baseContext, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(sender)
-            .setAutoCancel(true)
-            .setSound(defaultSoundUri)
-            .setContentIntent(pendingIntent)
-            .run {
-                if (imageUrl == null) {
-                    setContentText(getString(R.string.question_text))
-                } else {
-                    val bitmapImage = ImageRequest.Builder(baseContext)
-                        .data(imageUrl)
-                        .build()
-                        .let { ImageLoader(baseContext).execute(it) }
-                        .let { (it.drawable as BitmapDrawable).bitmap }
-
-                    setContentText(getString(R.string.answer_text))
-                        .setLargeIcon(bitmapImage)
-                        .setStyle(NotificationCompat.BigPictureStyle().bigPicture(bitmapImage))
-                }
-            }
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId,
-                getString(R.string.default_notification_channel_name),
-                NotificationManager.IMPORTANCE_DEFAULT)
-            notificationManager.createNotificationChannel(channel)
-        }
-        notificationManager.notify(0, notificationBuilder.build())
     }
 }
