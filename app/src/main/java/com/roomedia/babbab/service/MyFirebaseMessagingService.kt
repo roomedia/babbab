@@ -12,11 +12,8 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import coil.ImageLoader
 import coil.request.ImageRequest
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.app
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.google.firebase.messaging.ktx.messaging
 import com.roomedia.babbab.R
 import com.roomedia.babbab.ui.main.MainActivity
 import kotlinx.coroutines.CoroutineScope
@@ -34,9 +31,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val pendingIntent =
                 PendingIntent.getActivity(baseContext, 0, intent, PendingIntent.FLAG_ONE_SHOT)
 
-            val channelId = getString(R.string.default_notification_channel_id)
-            val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-
             val title = remoteMessage.notification?.title ?: ""
             val body = remoteMessage.notification?.body ?: ""
             val image = remoteMessage.notification?.imageUrl?.let { imageUrl ->
@@ -47,11 +41,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     .let { (it.drawable as BitmapDrawable).bitmap }
             }
 
+            val (channelId, channelName) = if (image == null) {
+                Pair(getString(R.string.question_notification_channel_id),
+                    getString(R.string.question_notification_channel_name))
+            } else {
+                Pair(getString(R.string.answer_notification_channel_id),
+                    getString(R.string.answer_notification_channel_name))
+            }
+
             val notificationBuilder = NotificationCompat.Builder(baseContext, channelId)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle(title)
                 .setContentText(body)
-                .setAutoCancel(true)
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent)
                 .run {
@@ -65,7 +66,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
                     channelId,
-                    getString(R.string.default_notification_channel_name),
+                    channelName,
                     NotificationManager.IMPORTANCE_DEFAULT
                 )
                 notificationManager.createNotificationChannel(channel)
@@ -82,5 +83,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private fun sendRegistrationToServer(token: String?) {
         // TODO: Implement this method to send token to your app server.
         Timber.d("sendRegistrationTokenToServer($token)")
+    }
+
+    companion object {
+        private val defaultSoundUri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
     }
 }
