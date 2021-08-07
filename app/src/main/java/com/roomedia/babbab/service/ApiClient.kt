@@ -4,10 +4,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
-    private const val BASE_URL = "https://fcm.googleapis.com/"
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+    private const val MESSAGE_URL = "https://fcm.googleapis.com/"
+    val messageService = Retrofit.Builder()
+        .baseUrl(MESSAGE_URL)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
-    val service: BabbabService = retrofit.create(BabbabService::class.java)
+        .create(MessageService::class.java)
 }

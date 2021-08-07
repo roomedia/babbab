@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.question_text)
             )
         )
-        ApiClient.service.sendNotification(model)
+        ApiClient.messageService.sendNotification(model)
     }
 
     private fun takeImage() {
@@ -117,6 +117,6 @@ class MainActivity : AppCompatActivity() {
                 imageUri
             )
         )
-        ApiClient.service.sendNotification(model)
+        ApiClient.messageService.sendNotification(model)
     }
 }
