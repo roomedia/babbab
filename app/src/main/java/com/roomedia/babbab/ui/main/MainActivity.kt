@@ -1,7 +1,10 @@
 package com.roomedia.babbab.ui.main
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -19,6 +22,7 @@ import com.roomedia.babbab.model.NotificationModel
 import com.roomedia.babbab.service.ApiClient
 import kotlinx.coroutines.*
 import timber.log.Timber
+import java.io.ByteArrayOutputStream
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
@@ -101,22 +105,32 @@ class MainActivity : AppCompatActivity() {
             .setView(binding.root)
             .setNegativeButton("❌", null)
             .setPositiveButton("✔️") { _, _ ->
-                sendAnswer(uri.toString())
+                sendAnswer(uri)
             }
             .setCancelable(false)
             .show()
     }
 
-    private fun sendAnswer(imageUri: String) = CoroutineScope(Dispatchers.IO).launch {
-        val model = DeviceNotificationModel(
+    private fun sendAnswer(imageUri: Uri) = CoroutineScope(Dispatchers.IO).launch {
+        val image = contentResolver.openInputStream(imageUri)
+            .run { BitmapFactory.decodeStream(this) }
+            .run {
+                ByteArrayOutputStream()
+                    .apply { compress(Bitmap.CompressFormat.JPEG, 100, this) }
+                    .toByteArray()
+            }
+            .run { Base64.encodeToString(this, Base64.DEFAULT) }
+        val imageUrl = ApiClient.imageUploadService.upload(image).data.medium.url
+
+        val deviceNotificationModel = DeviceNotificationModel(
             // TODO : change to device group token
             "eVDowI2PRF-T6C3_XfhXNB:APA91bHW2noxUWHeVVgKOBO31L5IZYPenVIb6UDLd7r657ro6Zh08rSsbf-TRSeXFhbxVfSLieNk4Q3zYEYt7St-Rr3D0-kI4nGf_Xuu9T5Q_2aa736DsVlTduW0WcgZTW0Srdl_kh2a",
             NotificationModel(
                 "answer from ${Firebase.auth.currentUser?.displayName}",
                 getString(R.string.answer_text),
-                imageUri
+                imageUrl
             )
         )
-        ApiClient.messageService.sendNotification(model)
+        ApiClient.messageService.sendNotification(deviceNotificationModel)
     }
 }
