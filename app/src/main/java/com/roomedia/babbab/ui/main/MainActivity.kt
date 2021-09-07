@@ -20,6 +20,7 @@ import com.roomedia.babbab.databinding.PopupSendPreviewBinding
 import com.roomedia.babbab.model.DeviceNotificationModel
 import com.roomedia.babbab.model.NotificationModel
 import com.roomedia.babbab.service.ApiClient
+import com.roomedia.babbab.ui.login.LoginActivity
 import kotlinx.coroutines.*
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
@@ -40,6 +41,12 @@ class MainActivity : AppCompatActivity() {
         val binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        if (Firebase.auth.currentUser == null) {
+            startActivity(LoginActivity.createIntent(this))
+            finish()
+            return
+        }
+
         binding.buttonSendQuestion.setOnClickListener {
             showSendQuestionPopup()
         }
@@ -54,6 +61,15 @@ class MainActivity : AppCompatActivity() {
                 return@addOnCompleteListener
             }
             Timber.d(task.result)
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (Firebase.auth.currentUser == null) {
+            startActivity(LoginActivity.createIntent(this))
+            finish()
+            return
         }
     }
 

@@ -7,4 +7,6 @@
     <string name="answer_notification_channel_id" translatable="false">answer_channel</string>
     <string name="answer_notification_channel_name" translatable="false">🍚🍚!!</string>
     <string name="answer_text" translatable="false">🙋💬🍚🤤</string>
+
+    <string name="sign_in_error" translatable="false">⚠️🌐❌🥺</string>
 </resources>
