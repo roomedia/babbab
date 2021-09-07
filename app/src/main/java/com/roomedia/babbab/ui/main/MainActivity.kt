@@ -12,7 +12,6 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.messaging.ktx.messaging
 import com.roomedia.babbab.BuildConfig
 import com.roomedia.babbab.R
 import com.roomedia.babbab.databinding.ActivityMainBinding
@@ -22,7 +21,6 @@ import com.roomedia.babbab.model.NotificationModel
 import com.roomedia.babbab.service.ApiClient
 import com.roomedia.babbab.ui.login.LoginActivity
 import kotlinx.coroutines.*
-import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
 
@@ -52,15 +50,6 @@ class MainActivity : AppCompatActivity() {
         }
         binding.buttonSendPicture.setOnClickListener {
             takeImage()
-        }
-
-        if (BuildConfig.DEBUG.not()) return
-        Firebase.messaging.token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Timber.w("Fetching FCM registration token failed: ${task.exception}")
-                return@addOnCompleteListener
-            }
-            Timber.d(task.result)
         }
     }
 
