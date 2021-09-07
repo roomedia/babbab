@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "732051877914",
+    "project_id": "babbab-18198",
+    "storage_bucket": "babbab-18198.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:732051877914:android:e302359e353de4b88c61a3",
+        "android_client_info": {
+          "package_name": "com.roomedia.babbab"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "732051877914-vehc5991sdfsntb0kbq0r3hrlesgde5v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.roomedia.babbab",
+            "certificate_hash": "cca1d9375af7fabc1ecbcb0073a57b2d1576a785"
+          }
+        },
+        {
+          "client_id": "732051877914-je47mjli140bgc439iohf21gca3ipb91.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5BOU-k4P8vP-IFoawALUhDYC4jlfT9Qg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "732051877914-je47mjli140bgc439iohf21gca3ipb91.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
