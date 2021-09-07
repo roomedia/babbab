@@ -96,3 +96,8 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+
+**/.firebase
+**/.firebaserc
+**/ui-debug.log
+**/firebase-debug.log
