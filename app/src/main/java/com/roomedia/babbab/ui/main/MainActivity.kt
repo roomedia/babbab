@@ -53,15 +53,6 @@ class MainActivity : AppCompatActivity() {
         binding.buttonSendPicture.setOnClickListener {
             takeImage()
         }
-
-        if (BuildConfig.DEBUG.not()) return
-        Firebase.messaging.token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Timber.w("Fetching FCM registration token failed: ${task.exception}")
-                return@addOnCompleteListener
-            }
-            Timber.d(task.result)
-        }
     }
 
     override fun onStart() {
@@ -150,3 +141,9 @@ class MainActivity : AppCompatActivity() {
         ApiClient.messageService.sendNotification(deviceNotificationModel)
     }
 }
+/*
+1. 친구 맺기 => 이메일, 닉#번호
+2. 친구 그룹 토큰 추가
+3. 닉네임 변경
+4. 이미지 저장 및 고정 뷰 -> 3일 시한 제거
+ */
