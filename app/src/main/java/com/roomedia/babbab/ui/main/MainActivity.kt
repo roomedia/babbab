@@ -20,19 +20,16 @@ import com.roomedia.babbab.model.DeviceNotificationModel
 import com.roomedia.babbab.model.NotificationModel
 import com.roomedia.babbab.service.ApiClient
 import com.roomedia.babbab.ui.login.LoginActivity
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
-    private var latestTmpUri: Uri? = null
-    private val takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { isSuccess ->
-        if (isSuccess.not()) return@registerForActivityResult
-        latestTmpUri?.let { uri ->
-            showSendPreviewPopup(uri)
-        }
-    }
+    private val latestTmpUri by lazy { getTmpFileUri() }
+    private val takePictureAndShowAnswerPopupLauncher =
+        registerForActivityResult(ActivityResultContracts.TakePicture(), ::showAnswerPopupIfSuccess)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,10 +43,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.buttonSendQuestion.setOnClickListener {
-            showSendQuestionPopup()
+            showQuestionPopup()
         }
-        binding.buttonSendPicture.setOnClickListener {
-            takeImage()
+        binding.buttonSendAnswer.setOnClickListener {
+            takePictureAndShowAnswerPopupLauncher.launch(latestTmpUri)
         }
     }
 
@@ -62,7 +59,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showSendQuestionPopup() {
+    private fun getTmpFileUri(): Uri {
+        val tmpFile = File.createTempFile("tmp_image_file", ".png", cacheDir).apply {
+            createNewFile()
+            deleteOnExit()
+        }
+        return FileProvider.getUriForFile(
+            applicationContext,
+            "${BuildConfig.APPLICATION_ID}.provider",
+            tmpFile
+        )
+    }
+
+    private fun showQuestionPopup() {
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.question_text))
             .setNegativeButton("❌", null)
@@ -72,7 +81,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun sendQuestion() = CoroutineScope(Dispatchers.IO).launch {
+    private fun sendQuestion() {
         val model = DeviceNotificationModel(
             // TODO : change to device group token
             "eVDowI2PRF-T6C3_XfhXNB:APA91bHW2noxUWHeVVgKOBO31L5IZYPenVIb6UDLd7r657ro6Zh08rSsbf-TRSeXFhbxVfSLieNk4Q3zYEYt7St-Rr3D0-kI4nGf_Xuu9T5Q_2aa736DsVlTduW0WcgZTW0Srdl_kh2a",
@@ -81,42 +90,33 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.question_text)
             )
         )
-        ApiClient.messageService.sendNotification(model)
-    }
-
-    private fun takeImage() {
-        lifecycleScope.launchWhenStarted {
-            getTmpFileUri().let { uri ->
-                latestTmpUri = uri
-                takePictureLauncher.launch(uri)
-            }
+        lifecycleScope.launch(Dispatchers.IO) {
+            ApiClient.messageService.sendNotification(model)
         }
     }
 
-    private fun getTmpFileUri(): Uri {
-        val tmpFile = File.createTempFile("tmp_image_file", ".png", cacheDir).apply {
-            createNewFile()
-            deleteOnExit()
+    private fun showAnswerPopupIfSuccess(isSuccess: Boolean) {
+        if (isSuccess) {
+            showAnswerPopup()
         }
-        return FileProvider.getUriForFile(applicationContext, "${BuildConfig.APPLICATION_ID}.provider", tmpFile)
     }
 
-    private fun showSendPreviewPopup(uri: Uri) {
+    private fun showAnswerPopup() {
         val binding = PopupSendPreviewBinding.inflate(layoutInflater)
-        binding.imagePreview.setImageURI(uri)
+        binding.imagePreview.setImageURI(latestTmpUri)
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.answer_text))
             .setView(binding.root)
             .setNegativeButton("❌", null)
             .setPositiveButton("✔️") { _, _ ->
-                sendAnswer(uri)
+                sendAnswer(latestTmpUri)
             }
             .setCancelable(false)
             .show()
     }
 
-    private fun sendAnswer(imageUri: Uri) = CoroutineScope(Dispatchers.IO).launch {
+    private fun sendAnswer(imageUri: Uri) {
         val image = contentResolver.openInputStream(imageUri)
             .run { BitmapFactory.decodeStream(this) }
             .run {
@@ -125,17 +125,18 @@ class MainActivity : AppCompatActivity() {
                     .toByteArray()
             }
             .run { Base64.encodeToString(this, Base64.DEFAULT) }
-        val imageUrl = ApiClient.imageUploadService.upload(image).data.medium.url
 
-        val deviceNotificationModel = DeviceNotificationModel(
-            // TODO : change to device group token
-            "eVDowI2PRF-T6C3_XfhXNB:APA91bHW2noxUWHeVVgKOBO31L5IZYPenVIb6UDLd7r657ro6Zh08rSsbf-TRSeXFhbxVfSLieNk4Q3zYEYt7St-Rr3D0-kI4nGf_Xuu9T5Q_2aa736DsVlTduW0WcgZTW0Srdl_kh2a",
-            NotificationModel(
-                "answer from ${Firebase.auth.currentUser?.displayName}",
-                getString(R.string.answer_text),
-                imageUrl
+        lifecycleScope.launch(Dispatchers.IO) {
+            val deviceNotificationModel = DeviceNotificationModel(
+                // TODO : change to device group token
+                "eVDowI2PRF-T6C3_XfhXNB:APA91bHW2noxUWHeVVgKOBO31L5IZYPenVIb6UDLd7r657ro6Zh08rSsbf-TRSeXFhbxVfSLieNk4Q3zYEYt7St-Rr3D0-kI4nGf_Xuu9T5Q_2aa736DsVlTduW0WcgZTW0Srdl_kh2a",
+                NotificationModel(
+                    "answer from ${Firebase.auth.currentUser?.displayName}",
+                    getString(R.string.answer_text),
+                    ApiClient.imageUploadService.upload(image).data.medium.url
+                )
             )
-        )
-        ApiClient.messageService.sendNotification(deviceNotificationModel)
+            ApiClient.messageService.sendNotification(deviceNotificationModel)
+        }
     }
 }
