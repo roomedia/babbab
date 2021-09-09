@@ -1,65 +1,77 @@
 package com.roomedia.babbab.ui.login
 
-import android.os.Bundle
+import android.app.Activity
+import android.content.Intent
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.roomedia.babbab.extension.startActivity
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import com.roomedia.babbab.R
 import com.roomedia.babbab.extension.startActivityForResult
-import com.roomedia.babbab.ui.main.MainActivity
 import timber.log.Timber
 
 class LoginActivity : AppCompatActivity() {
 
-    private val signInLauncher = registerForActivityResult(
-        FirebaseAuthUIActivityResultContract()
-    ) { res ->
-        this.onSignInResult(res)
+    private val signInLauncher =
+        registerForActivityResult(FirebaseAuthUIActivityResultContract(), ::onSignInResult)
+
+    override fun onStart() {
+        super.onStart()
+        if (Firebase.auth.currentUser == null) {
+            startSignInActivityForResult()
+        } else {
+            startPreviousActivity()
+        }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        createSignInIntent()
+    private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult) {
+        if (result.resultCode == RESULT_OK) {
+            Timber.d("Sign in successful!")
+            startPreviousActivity()
+        } else {
+            Toast.makeText(this, R.string.sign_in_error, Toast.LENGTH_LONG).show()
+
+            val response = result.idpResponse
+            if (response == null) {
+                Timber.w("Sign in canceled")
+            } else {
+                Timber.w("Sign in error", response.error)
+            }
+        }
     }
 
-    private fun createSignInIntent() {
-        val providers = arrayListOf(
-            AuthUI.IdpConfig.EmailBuilder().build(),
-            AuthUI.IdpConfig.GoogleBuilder().build(),)
-
+    private fun startSignInActivityForResult() {
         AuthUI.getInstance()
             .createSignInIntentBuilder()
-            .setAvailableProviders(providers)
-//            .setLogo(R.drawable.my_great_logo) // Set logo drawable
-//            .setTheme(R.style.MySuperAppTheme) // Set theme
+            .setLogo(R.mipmap.ic_launcher)
+            .setAvailableProviders(listOf(
+                AuthUI.IdpConfig.EmailBuilder().build(),
+                AuthUI.IdpConfig.GoogleBuilder().build(),
+                AuthUI.IdpConfig.TwitterBuilder().build(),
+                // TODO: Add Facebook App json,
+//            AuthUI.IdpConfig.FacebookBuilder().build(),
+                // TODO: Add Naver Login,
+                // TODO: Add Kakao Login,
+            ))
             .build()
             .startActivityForResult(signInLauncher)
     }
 
-    private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult) {
-        val response = result.idpResponse
-        if (result.resultCode == RESULT_OK) {
-//            val user = FirebaseAuth.getInstance().currentUser
-            startActivity(MainActivity::class.java)
-            return
+    private fun startPreviousActivity() {
+        intent.getStringExtra(KEY_ACTIVITY_NAME)?.also { activityName ->
+            startActivity(Intent(this, Class.forName(activityName)))
         }
-        Timber.w(response?.error)
+        finish()
     }
 
-    private fun signOut() {
-        AuthUI.getInstance()
-            .signOut(this)
-            .addOnCompleteListener {
-                // ...
-            }
-    }
+    companion object {
+        private const val KEY_ACTIVITY_NAME = "activity_name"
 
-    private fun delete() {
-        AuthUI.getInstance()
-            .delete(this)
-            .addOnCompleteListener {
-                // ...
-            }
+        fun createIntent(activity: Activity): Intent =
+            Intent(activity, LoginActivity::class.java)
+                .putExtra(KEY_ACTIVITY_NAME, activity::class.qualifiedName)
     }
 }
