@@ -1,13 +1,32 @@
 package com.roomedia.babbab.ui.main
 
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.Button
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.ktx.auth
@@ -20,6 +39,7 @@ import com.roomedia.babbab.model.DeviceNotificationModel
 import com.roomedia.babbab.model.NotificationModel
 import com.roomedia.babbab.service.ApiClient
 import com.roomedia.babbab.ui.login.LoginActivity
+import com.roomedia.babbab.ui.main.ui.theme.BabbabTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
@@ -137,6 +157,55 @@ class MainActivity : AppCompatActivity() {
                 )
             )
             ApiClient.messageService.sendNotification(deviceNotificationModel)
+        }
+    }
+}
+
+@Composable
+fun SendNotificationButtons(
+    showQuestionPopup: () -> Unit = {},
+    showAnswerPopup: () -> Unit = {},
+) {
+    ConstraintLayout(Modifier.fillMaxHeight()) {
+        Row(
+            modifier = Modifier.padding(8.dp).constrainAs(createRef()) {
+                bottom.linkTo(parent.bottom)
+            },
+        ) {
+            Button(showQuestionPopup, text = "🤔🍚")
+            Spacer(Modifier.width(4.dp))
+            Button(showAnswerPopup, text = "🤤🍚")
+        }
+    }
+}
+
+@Composable
+fun RowScope.Button(onClick: () -> Unit, modifier: Modifier = Modifier, text: String) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .weight(1f)
+            .height(72.dp)
+            .then(modifier),
+    ) {
+        Text(text, fontSize = 28.sp)
+    }
+}
+
+@Preview(
+    name = "Light Theme",
+    showBackground = true,
+)
+@Preview(
+    name = "Dark Theme",
+    showBackground = true,
+    uiMode = UI_MODE_NIGHT_YES,
+)
+@Composable
+fun DefaultPreview() {
+    BabbabTheme {
+        Scaffold {
+            SendNotificationButtons()
         }
     }
 }
