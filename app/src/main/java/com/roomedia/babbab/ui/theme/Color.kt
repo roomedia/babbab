@@ -1,4 +1,4 @@
-package com.roomedia.babbab.ui.main.ui.theme
+package com.roomedia.babbab.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
