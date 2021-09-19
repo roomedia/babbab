@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -48,10 +50,12 @@ import java.io.File
 class MainActivity : AppCompatActivity() {
 
     private val latestTmpUri by lazy { getTmpFileUri() }
+    private val targetUri: MutableState<Uri?> = mutableStateOf(null)
+
     private val takePhotoLauncher =
-        registerForActivityResult(ActivityResultContracts.TakePicture(), { Timber.d("$it") })
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { _ -> setPhotoUri() }
     private val selectPhotoLauncher =
-        registerForActivityResult(ActivityResultContracts.GetContent(), { Timber.d("$it") })
+        registerForActivityResult(ActivityResultContracts.GetContent(), ::setPhotoUri)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,6 +74,7 @@ class MainActivity : AppCompatActivity() {
                         ::sendAnswer,
                         { takePhotoLauncher.launch(latestTmpUri) },
                         { selectPhotoLauncher.launch("image/*") },
+                        targetUri,
                     )
                 }
             }
@@ -97,6 +102,11 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun setPhotoUri(uri: Uri? = latestTmpUri) {
+        if (uri == null) return
+        targetUri.value = uri
+    }
+
     private fun sendQuestion() {
         val model = DeviceNotificationModel(
             // TODO : change to device group token
@@ -113,7 +123,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendAnswer() {
-        val image = contentResolver.openInputStream(latestTmpUri)
+        val imageUri = targetUri.value ?: run {
+            Toast.makeText(this, R.string.send_answer_error, Toast.LENGTH_LONG).show()
+            return
+        }
+        val image = contentResolver.openInputStream(imageUri)
             .run { BitmapFactory.decodeStream(this) }
             .run {
                 ByteArrayOutputStream()
@@ -157,6 +171,7 @@ fun SendNotificationButtons(
     sendAnswer: () -> Unit,
     takePhoto: () -> Unit,
     selectPhoto: () -> Unit,
+    targetUri: MutableState<Uri?>,
 ) {
     val showQuestionPopup = remember { mutableStateOf(false) }
     val showAnswerPopup = remember { mutableStateOf(false) }
@@ -174,7 +189,7 @@ fun SendNotificationButtons(
         }
     }
     QuestionPopup(showQuestionPopup, sendQuestion)
-    AnswerPopup(showAnswerPopup, sendAnswer, takePhoto, selectPhoto)
+    AnswerPopup(showAnswerPopup, sendAnswer, takePhoto, selectPhoto, targetUri)
 }
 
 @Preview(name = "Light Theme")
@@ -187,7 +202,7 @@ fun DefaultPreview() {
     BabbabTheme {
         Scaffold {
             NotificationList()
-            SendNotificationButtons({}, {}, {}, {})
+            SendNotificationButtons({}, {}, {}, {}, remember { mutableStateOf(null) })
         }
     }
 }

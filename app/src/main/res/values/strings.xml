@@ -11,6 +11,7 @@
     <string name="answer_from" translatable="false">Answer from %s</string>
 
     <string name="sign_in_error" translatable="false">⚠️🌐❌🥺</string>
+    <string name="send_answer_error" translatable="false">⚠️🍚📸❌🥺</string>
 
     <string name="profile_image" translatable="false">profile image of user %s</string>
 

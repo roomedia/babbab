@@ -18,6 +18,7 @@ import com.roomedia.babbab.ui.main.button.BorderlessTextButton
 @Composable
 fun BasePopup(
     showDialog: MutableState<Boolean>,
+    onDismissRequest: (() -> Unit)? = null,
     onClickConfirm: () -> Unit,
     @StringRes titleRes: Int,
     properties: DialogProperties = DialogProperties(),
@@ -25,21 +26,30 @@ fun BasePopup(
 ) {
     if (showDialog.value.not()) return
     AlertDialog(
-        onDismissRequest = { showDialog.value = false },
+        onDismissRequest = {
+            showDialog.value = false
+            onDismissRequest?.invoke()
+        },
         buttons = {
-            content?.invoke()
             Row(
-                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
-                BorderlessTextButton(text = "❌️") { showDialog.value = false }
+                BorderlessTextButton(text = "❌️") {
+                    showDialog.value = false
+                    onDismissRequest?.invoke()
+                }
                 BorderlessTextButton(text = "✔️") {
                     onClickConfirm()
                     showDialog.value = false
+                    onDismissRequest?.invoke()
                 }
             }
         },
         title = { Text(stringResource(titleRes)) },
+        text = { content?.invoke() },
         properties = properties,
     )
 }
