@@ -13,4 +13,8 @@
     <string name="sign_in_error" translatable="false">⚠️🌐❌🥺</string>
 
     <string name="profile_image" translatable="false">profile image of user %s</string>
+
+    <string name="take_photo" translatable="false">Take Photo</string>
+    <string name="select_photo" translatable="false">Select Photo</string>
+    <string name="recent_photo" translatable="false">Recent Photo #%s</string>
 </resources>

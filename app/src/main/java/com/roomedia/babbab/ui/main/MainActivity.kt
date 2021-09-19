@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,23 +34,27 @@ import com.roomedia.babbab.model.Event
 import com.roomedia.babbab.model.NotificationModel
 import com.roomedia.babbab.service.ApiClient
 import com.roomedia.babbab.ui.login.LoginActivity
+import com.roomedia.babbab.ui.main.alertDialog.AnswerPopup
+import com.roomedia.babbab.ui.main.alertDialog.QuestionPopup
+import com.roomedia.babbab.ui.main.button.FullWeightTextButton
+import com.roomedia.babbab.ui.main.notificationList.NotificationItem
 import com.roomedia.babbab.ui.theme.BabbabTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
     private val latestTmpUri by lazy { getTmpFileUri() }
-    private val takePictureAndShowAnswerPopupLauncher =
-        registerForActivityResult(ActivityResultContracts.TakePicture(), ::showAnswerPopupIfSuccess)
+    private val takePhotoLauncher =
+        registerForActivityResult(ActivityResultContracts.TakePicture(), { Timber.d("$it") })
+    private val selectPhotoLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent(), { Timber.d("$it") })
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
         if (Firebase.auth.currentUser == null) {
             startActivity(LoginActivity.createIntent(this))
             finish()
@@ -59,7 +65,12 @@ class MainActivity : AppCompatActivity() {
             BabbabTheme {
                 Scaffold {
                     NotificationList()
-                    SendNotificationButtons()
+                    SendNotificationButtons(
+                        ::sendQuestion,
+                        ::sendAnswer,
+                        { takePhotoLauncher.launch(latestTmpUri) },
+                        { selectPhotoLauncher.launch("image/*") },
+                    )
                 }
             }
         }
@@ -96,12 +107,13 @@ class MainActivity : AppCompatActivity() {
             )
         )
         lifecycleScope.launch(Dispatchers.IO) {
-            ApiClient.messageService.sendNotification(model)
+            val result = ApiClient.messageService.sendNotification(model)
+            Timber.d("$result")
         }
     }
 
-    private fun sendAnswer(imageUri: Uri) {
-        val image = contentResolver.openInputStream(imageUri)
+    private fun sendAnswer() {
+        val image = contentResolver.openInputStream(latestTmpUri)
             .run { BitmapFactory.decodeStream(this) }
             .run {
                 ByteArrayOutputStream()
@@ -141,9 +153,13 @@ fun NotificationList() {
 
 @Composable
 fun SendNotificationButtons(
-    sendQuestion: () -> Unit = {},
-    sendAnswer: () -> Unit = {},
+    sendQuestion: () -> Unit,
+    sendAnswer: () -> Unit,
+    takePhoto: () -> Unit,
+    selectPhoto: () -> Unit,
 ) {
+    val showQuestionPopup = remember { mutableStateOf(false) }
+    val showAnswerPopup = remember { mutableStateOf(false) }
     ConstraintLayout(Modifier.fillMaxHeight()) {
         Row(
             modifier = Modifier
@@ -152,14 +168,16 @@ fun SendNotificationButtons(
                     bottom.linkTo(parent.bottom)
                 },
         ) {
-            TextButton(text = "🤔🍚") { showQuestionPopup.value = true }
+            FullWeightTextButton(text = "🤔🍚") { showQuestionPopup.value = true }
             Spacer(Modifier.width(4.dp))
-            TextButton(text = "🤤🍚") { showAnswerPopup.value = true }
+            FullWeightTextButton(text = "🤤🍚") { showAnswerPopup.value = true }
         }
     }
+    QuestionPopup(showQuestionPopup, sendQuestion)
+    AnswerPopup(showAnswerPopup, sendAnswer, takePhoto, selectPhoto)
 }
 
-@Preview(name = "Light Theme",)
+@Preview(name = "Light Theme")
 @Preview(
     name = "Dark Theme",
     uiMode = UI_MODE_NIGHT_YES,
@@ -169,7 +187,7 @@ fun DefaultPreview() {
     BabbabTheme {
         Scaffold {
             NotificationList()
-            SendNotificationButtons()
+            SendNotificationButtons({}, {}, {}, {})
         }
     }
 }
