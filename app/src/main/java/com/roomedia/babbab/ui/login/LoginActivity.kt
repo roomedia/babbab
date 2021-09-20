@@ -8,9 +8,11 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.roomedia.babbab.R
 import com.roomedia.babbab.extension.startActivityForResult
+import com.roomedia.babbab.model.User
 import timber.log.Timber
 
 class LoginActivity : AppCompatActivity() {
@@ -24,22 +26,6 @@ class LoginActivity : AppCompatActivity() {
             startSignInActivityForResult()
         } else {
             startPreviousActivity()
-        }
-    }
-
-    private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult) {
-        if (result.resultCode == RESULT_OK) {
-            Timber.d("Sign in successful!")
-            startPreviousActivity()
-        } else {
-            Toast.makeText(this, R.string.sign_in_error, Toast.LENGTH_LONG).show()
-
-            val response = result.idpResponse
-            if (response == null) {
-                Timber.w("Sign in canceled")
-            } else {
-                Timber.w("Sign in error", response.error)
-            }
         }
     }
 
@@ -58,6 +44,31 @@ class LoginActivity : AppCompatActivity() {
             ))
             .build()
             .startActivityForResult(signInLauncher)
+    }
+
+    private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult) {
+        if (result.resultCode == RESULT_OK) {
+            Timber.d("Sign in successful!")
+            Firebase.auth.currentUser?.apply {
+                insertUserToFirebaseRealtimeDatabase(uid, displayName, email)
+            }
+            startPreviousActivity()
+        } else {
+            val response = result.idpResponse
+            if (response == null) {
+                Timber.w("Sign in canceled")
+            } else {
+                Timber.w("Sign in error", response.error)
+            }
+            Toast.makeText(this, R.string.sign_in_error, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun insertUserToFirebaseRealtimeDatabase(uid: String, displayName: String?, email: String?) {
+        val user = User(displayName, email)
+        Firebase.database.getReference("user").child(uid).setValue(user).addOnSuccessListener {
+            Timber.d("Insert user successful!")
+        }
     }
 
     private fun startPreviousActivity() {
