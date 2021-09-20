@@ -1,10 +1,14 @@
 package com.roomedia.babbab.ui.main
 
+import android.Manifest
+import android.content.ContentUris
+import android.content.pm.PackageManager
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Base64
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -25,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.ktx.auth
@@ -41,19 +46,21 @@ import com.roomedia.babbab.ui.main.alertDialog.QuestionPopup
 import com.roomedia.babbab.ui.main.button.FullWeightTextButton
 import com.roomedia.babbab.ui.main.notificationList.NotificationItem
 import com.roomedia.babbab.ui.theme.BabbabTheme
+import com.roomedia.babbab.util.checkSelfPermissionCompat
+import com.roomedia.babbab.util.requestPermissionsCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ActivityCompat.OnRequestPermissionsResultCallback {
 
     private val latestTmpUri by lazy { getTmpFileUri() }
     private val targetUri: MutableState<Uri?> = mutableStateOf(null)
 
     private val takePhotoLauncher =
-        registerForActivityResult(ActivityResultContracts.TakePicture()) { _ -> setPhotoUri() }
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { setPhotoUri() }
     private val selectPhotoLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent(), ::setPhotoUri)
 
@@ -64,17 +71,22 @@ class MainActivity : AppCompatActivity() {
             finish()
             return
         }
-
         setContent {
+            val showQuestionPopup = remember { mutableStateOf(false) }
+            val showAnswerPopup = remember { mutableStateOf(false) }
+
             BabbabTheme {
                 Scaffold {
                     NotificationList()
-                    SendNotificationButtons(
-                        ::sendQuestion,
-                        ::sendAnswer,
-                        { takePhotoLauncher.launch(latestTmpUri) },
-                        { selectPhotoLauncher.launch("image/*") },
-                        targetUri,
+                    SendNotificationButtons(showQuestionPopup, showAnswerPopup)
+                    QuestionPopup(showQuestionPopup, ::sendQuestion)
+                    AnswerPopup(
+                        showDialog = showAnswerPopup,
+                        sendAnswer = ::sendAnswer,
+                        takePhoto = { takePhotoLauncher.launch(latestTmpUri) },
+                        selectPhoto = { selectPhotoLauncher.launch("image/*") },
+                        recentUris = getRecentPhotoUriList(),
+                        targetUri = targetUri,
                     )
                 }
             }
@@ -87,6 +99,19 @@ class MainActivity : AppCompatActivity() {
             startActivity(LoginActivity.createIntent(this))
             finish()
             return
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            PERMISSION_REQUEST_READ_STORAGE -> if (grantResults.any { it == PackageManager.PERMISSION_DENIED }) {
+                Toast.makeText(this, "R.string.read_storage_permission_denied", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -105,6 +130,30 @@ class MainActivity : AppCompatActivity() {
     private fun setPhotoUri(uri: Uri? = latestTmpUri) {
         if (uri == null) return
         targetUri.value = uri
+    }
+
+    private fun getRecentPhotoUriList(): List<Uri?> {
+        if (checkSelfPermissionCompat(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+            requestPermissionsCompat(
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                PERMISSION_REQUEST_READ_STORAGE
+            )
+            return arrayOfNulls<Uri?>(RECENT_PHOTO_COUNT).toList()
+        }
+        val uriList = mutableListOf<Uri?>()
+        val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        val projection = arrayOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DATE_ADDED,
+        )
+        val sortOrder = MediaStore.Images.Media.DATE_ADDED + " DESC LIMIT $RECENT_PHOTO_COUNT"
+        contentResolver.query(contentUri, projection, null, null, sortOrder)?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+            while (cursor.moveToNext()) {
+                uriList += ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
+            }
+        }
+        return uriList + arrayOfNulls(RECENT_PHOTO_COUNT - uriList.size)
     }
 
     private fun sendQuestion() {
@@ -149,6 +198,11 @@ class MainActivity : AppCompatActivity() {
             ApiClient.messageService.sendNotification(deviceNotificationModel)
         }
     }
+
+    companion object {
+        const val RECENT_PHOTO_COUNT = 2
+        const val PERMISSION_REQUEST_READ_STORAGE = 0
+    }
 }
 
 @Composable
@@ -166,15 +220,7 @@ fun NotificationList() {
 }
 
 @Composable
-fun SendNotificationButtons(
-    sendQuestion: () -> Unit,
-    sendAnswer: () -> Unit,
-    takePhoto: () -> Unit,
-    selectPhoto: () -> Unit,
-    targetUri: MutableState<Uri?>,
-) {
-    val showQuestionPopup = remember { mutableStateOf(false) }
-    val showAnswerPopup = remember { mutableStateOf(false) }
+fun SendNotificationButtons(showQuestionPopup: MutableState<Boolean>, showAnswerPopup: MutableState<Boolean>) {
     ConstraintLayout(Modifier.fillMaxHeight()) {
         Row(
             modifier = Modifier
@@ -188,8 +234,6 @@ fun SendNotificationButtons(
             FullWeightTextButton(text = "🤤🍚") { showAnswerPopup.value = true }
         }
     }
-    QuestionPopup(showQuestionPopup, sendQuestion)
-    AnswerPopup(showAnswerPopup, sendAnswer, takePhoto, selectPhoto, targetUri)
 }
 
 @Preview(name = "Light Theme")
@@ -199,10 +243,13 @@ fun SendNotificationButtons(
 )
 @Composable
 fun DefaultPreview() {
+    val showQuestionPopup = remember { mutableStateOf(false) }
+    val showAnswerPopup = remember { mutableStateOf(false) }
+
     BabbabTheme {
         Scaffold {
             NotificationList()
-            SendNotificationButtons({}, {}, {}, {}, remember { mutableStateOf(null) })
+            SendNotificationButtons(showQuestionPopup, showAnswerPopup)
         }
     }
 }

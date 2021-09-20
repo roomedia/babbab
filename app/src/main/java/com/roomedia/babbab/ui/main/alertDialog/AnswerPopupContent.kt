@@ -30,7 +30,12 @@ import com.roomedia.babbab.ui.theme.BabbabTheme
 import com.roomedia.babbab.ui.theme.Shapes
 
 @Composable
-fun AnswerPopupContent(takePhoto: () -> Unit, selectPhoto: () -> Unit, targetUri: MutableState<Uri?>) {
+fun AnswerPopupContent(
+    takePhoto: () -> Unit,
+    selectPhoto: () -> Unit,
+    recentUris: List<Uri?>,
+    targetUri: MutableState<Uri?>,
+) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -48,17 +53,19 @@ fun AnswerPopupContent(takePhoto: () -> Unit, selectPhoto: () -> Unit, targetUri
                 onClick = selectPhoto,
             )
 
-            // TODO: Change to Recent Images
-            listOf(
-                R.drawable.ic_launcher_background,
-                R.drawable.ic_launcher_foreground,
-            ).forEachIndexed { idx, src ->
+            recentUris.forEachIndexed { idx, uri ->
                 Spacer(Modifier.width(8.dp))
-                ThumbnailButton(
-                    painter = painterResource(src),
-                    contentDescription = stringResource(R.string.recent_photo, idx),
-                    onClick = {},
-                )
+                if (uri == null) {
+                    Spacer(Modifier.weight(1f))
+                } else {
+                    ThumbnailButton(
+                        painter = rememberImagePainter(uri, builder = {
+                            crossfade(true)
+                        }),
+                        contentDescription = stringResource(R.string.recent_photo, idx),
+                        onClick = { targetUri.value = uri },
+                    )
+                }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -94,6 +101,6 @@ fun AnswerPopupContent(takePhoto: () -> Unit, selectPhoto: () -> Unit, targetUri
 @Composable
 fun DefaultPreview() {
     BabbabTheme {
-        AnswerPopupContent({}, {}, remember { mutableStateOf(null) })
+        AnswerPopupContent({}, {}, listOf(null, null), remember { mutableStateOf(null) })
     }
 }
