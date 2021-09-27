@@ -18,4 +18,8 @@
     <string name="take_photo" translatable="false">Take Photo</string>
     <string name="select_photo" translatable="false">Select Photo</string>
     <string name="recent_photo" translatable="false">Recent Photo #%s</string>
+
+    <string name="home">Home</string>
+    <string name="friends_list">Friends List</string>
+    <string name="setting">Setting</string>
 </resources>
