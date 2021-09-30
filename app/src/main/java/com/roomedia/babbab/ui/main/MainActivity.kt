@@ -30,14 +30,14 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.roomedia.babbab.ui.login.LoginActivity
 import com.roomedia.babbab.ui.main.button.BorderlessTextButton
+import com.roomedia.babbab.ui.main.screen.Friends
 import com.roomedia.babbab.ui.main.screen.Home
 import com.roomedia.babbab.ui.main.screen.Screen
 import com.roomedia.babbab.ui.theme.BabbabTheme
 import com.roomedia.babbab.util.checkSelfPermissionCompat
 import com.roomedia.babbab.util.requestPermissionsCompat
-import timber.log.Timber
 
-class MainActivity : AppCompatActivity(), Home, ActivityCompat.OnRequestPermissionsResultCallback {
+class MainActivity : AppCompatActivity(), Home, Friends, ActivityCompat.OnRequestPermissionsResultCallback {
 
     override val latestTmpUri by lazy { getTmpUri() }
     override val targetUri: MutableState<Uri?> = mutableStateOf(null)
@@ -70,9 +70,7 @@ class MainActivity : AppCompatActivity(), Home, ActivityCompat.OnRequestPermissi
                         modifier = Modifier.padding(innerPadding),
                     ) {
                         composable(Screen.Home.route, content = { Home() })
-                        composable(
-                            Screen.FriendsList.route,
-                            content = { BorderlessTextButton(text = "Friend List") {} })
+                        composable(Screen.Friends.route, content = { Friends() })
                         composable(
                             Screen.Settings.route,
                             content = { BorderlessTextButton(text = "Settings") {} })
@@ -132,8 +130,6 @@ fun BottomNavigationBar(navController: NavHostController) {
                         launchSingleTop = true
                         restoreState = true
                     }
-                    Timber.d(navController.currentDestination?.route)
-                    Timber.d(screen.route)
                 },
                 icon = { Icon(screen.icon, contentDescription = screen.route) },
                 label = { Text(stringResource(screen.name)) },
@@ -150,7 +146,6 @@ fun BottomNavigationBar(navController: NavHostController) {
 @Composable
 fun MainActivityPreview() {
     val navController = rememberNavController()
-    navController.navigate(Screen.items.first().route)
     BabbabTheme {
         Scaffold(bottomBar = { BottomNavigationBar(navController) }) {
         }

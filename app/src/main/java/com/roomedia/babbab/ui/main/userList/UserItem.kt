@@ -1,0 +1,155 @@
+package com.roomedia.babbab.ui.main.userList
+
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Card
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import coil.compose.rememberImagePainter
+import com.roomedia.babbab.R
+import com.roomedia.babbab.model.FriendshipEvent
+import com.roomedia.babbab.model.FriendshipState
+import com.roomedia.babbab.model.User
+import com.roomedia.babbab.ui.main.button.BorderlessTextButton
+import com.roomedia.babbab.ui.main.button.RoundedCornerTextButton
+import com.roomedia.babbab.ui.theme.BabbabTheme
+import com.roomedia.babbab.ui.theme.Shapes
+
+@Composable
+fun UserItem(user: User, friendshipState: MutableState<FriendshipState>) {
+    val friendshipEvent = remember { mutableStateOf(FriendshipEvent.ON_CLEAR) }
+    Card(
+        modifier = Modifier
+            .padding(start = 4.dp, top = 8.dp, end = 4.dp, bottom = 4.dp)
+            .fillMaxWidth(),
+        shape = Shapes.medium,
+    ) {
+        Row(Modifier.padding(12.dp)) {
+            Image(
+                // TODO: get current User Profile
+                painter = rememberImagePainter(
+                    data = "https://i.ibb.co/WgvgVzf/convert-icon-2.png",
+                    builder = {
+                        crossfade(true)
+                    },
+                ),
+                // TODO: get current User Name from uid
+                contentDescription = stringResource(R.string.profile_image, user.uid),
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(Shapes.small),
+            )
+            Spacer(Modifier.width(8.dp))
+            Column {
+                Text("${user.displayName}")
+                Text("${user.email}")
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.CenterVertically),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                when (friendshipState.value) {
+                    FriendshipState.IS_STRANGER -> RoundedCornerTextButton(text = "️+") {
+                        friendshipEvent.value = FriendshipEvent.ON_REQUEST
+                    }
+                    FriendshipState.PENDING_RESPONSE -> RoundedCornerTextButton(text = "...") {
+                        friendshipEvent.value = FriendshipEvent.ON_CANCEL
+                    }
+                    FriendshipState.IS_FRIEND -> RoundedCornerTextButton(text = "️x") {
+                        friendshipEvent.value = FriendshipEvent.ON_DISCONNECT
+                    }
+                }
+            }
+        }
+        when (friendshipEvent.value) {
+            FriendshipEvent.ON_CLEAR -> {}
+            FriendshipEvent.ON_REQUEST -> {
+                AlertDialog(
+                    onDismissRequest = {
+                        friendshipEvent.value = FriendshipEvent.ON_CLEAR
+                    },
+                    confirmButton = {
+                        BorderlessTextButton(text = "✔️") {
+                            // TODO: Request Friend
+                            friendshipState.value = FriendshipState.PENDING_RESPONSE
+                            friendshipEvent.value = FriendshipEvent.ON_CLEAR
+                        }
+                    },
+                    dismissButton = {
+                        BorderlessTextButton(text = "❌️") {
+                            friendshipEvent.value = FriendshipEvent.ON_CLEAR
+                        }
+                    },
+                    title = {
+                        Text("👤+ ${user.displayName}")
+                    },
+                )
+            }
+            FriendshipEvent.ON_CANCEL -> {
+                // TODO: Invalidate request
+                friendshipState.value = FriendshipState.IS_STRANGER
+            }
+            FriendshipEvent.ON_DISCONNECT -> {
+                AlertDialog(
+                    onDismissRequest = {
+                        friendshipEvent.value = FriendshipEvent.ON_CLEAR
+                    },
+                    confirmButton = {
+                        BorderlessTextButton(text = "✔️") {
+                            // TODO: Disconnect Friend
+                            friendshipState.value = FriendshipState.IS_STRANGER
+                            friendshipEvent.value = FriendshipEvent.ON_CLEAR
+                        }
+                    },
+                    dismissButton = {
+                        BorderlessTextButton(text = "❌️") {
+                            friendshipEvent.value = FriendshipEvent.ON_CLEAR
+                        }
+                    },
+                    title = {
+                        Text("👤x ${user.displayName}")
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "Light Theme")
+@Preview(
+    name = "Dark Theme",
+    uiMode = UI_MODE_NIGHT_YES,
+)
+@Composable
+fun UserItemPreview() {
+    BabbabTheme {
+        Scaffold {
+            UserItem(
+                User("uid", "USER#1", "email@host.com"),
+                mutableStateOf(FriendshipState.IS_STRANGER)
+            )
+            UserItem(
+                User("uid", "USER#2", "email@host.com"),
+                mutableStateOf(FriendshipState.PENDING_RESPONSE)
+            )
+            UserItem(
+                User("uid", "USER#3", "email@host.com"),
+                mutableStateOf(FriendshipState.IS_FRIEND)
+            )
+        }
+    }
+}
