@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import com.roomedia.babbab.model.Event
+import com.roomedia.babbab.model.NotificationEvent
 import com.roomedia.babbab.ui.main.button.FullWeightTextButton
 import com.roomedia.babbab.ui.theme.BabbabTheme
 
@@ -22,9 +22,9 @@ fun NotificationList() {
         // TODO: change to real data
         items(10) {
             if (it % 7 == 0) {
-                NotificationItem(Event.Question("USER#$it", "yy-MM-dd HH:mm"))
+                NotificationItem(NotificationEvent.Question("USER#$it", "yy-MM-dd HH:mm"))
             } else {
-                NotificationItem(Event.Answer("User#$it", "yy-MM-dd HH:mm", "https://i.ibb.co/whTbKKD/Eok-Cph-XVQAk-PNw-T.jpg"))
+                NotificationItem(NotificationEvent.Answer("User#$it", "yy-MM-dd HH:mm", "https://i.ibb.co/whTbKKD/Eok-Cph-XVQAk-PNw-T.jpg"))
             }
         }
     }

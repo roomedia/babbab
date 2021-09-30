@@ -10,11 +10,11 @@ import androidx.compose.ui.res.stringResource
 import coil.compose.rememberImagePainter
 import coil.size.OriginalSize
 import com.roomedia.babbab.R
-import com.roomedia.babbab.model.Event
+import com.roomedia.babbab.model.NotificationEvent
 import com.roomedia.babbab.ui.theme.Shapes
 
 @Composable
-fun AnswerItem(answer: Event.Answer) {
+fun AnswerItem(answer: NotificationEvent.Answer) {
     Image(
         painter = rememberImagePainter(
             data = answer.imageUrl,

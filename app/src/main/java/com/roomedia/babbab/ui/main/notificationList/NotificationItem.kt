@@ -16,12 +16,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
 import com.roomedia.babbab.R
-import com.roomedia.babbab.model.Event
+import com.roomedia.babbab.model.NotificationEvent
 import com.roomedia.babbab.ui.theme.BabbabTheme
 import com.roomedia.babbab.ui.theme.Shapes
 
 @Composable
-fun NotificationItem(event: Event) {
+fun NotificationItem(event: NotificationEvent) {
     Card(
         modifier = Modifier
             .padding(start = 4.dp, top = 8.dp, end = 4.dp, bottom = 4.dp)
@@ -62,14 +62,14 @@ fun NotificationItem(event: Event) {
                         )
                     }
                     val textId = when (event) {
-                        is Event.Question -> R.string.question_text
-                        is Event.Answer -> R.string.answer_text
+                        is NotificationEvent.Question -> R.string.question_text
+                        is NotificationEvent.Answer -> R.string.answer_text
                     }
                     Text(stringResource(textId))
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            if (event is Event.Answer) {
+            if (event is NotificationEvent.Answer) {
+                Spacer(Modifier.height(12.dp))
                 AnswerItem(answer = event)
             }
         }
@@ -86,9 +86,9 @@ fun NotificationItemPreview() {
     BabbabTheme {
         Scaffold {
             Column {
-                NotificationItem(Event.Question("UserQuestion", "yy-MM-dd HH:mm"))
+                NotificationItem(NotificationEvent.Question("UserQuestion", "yy-MM-dd HH:mm"))
                 NotificationItem(
-                    Event.Answer(
+                    NotificationEvent.Answer(
                         "UserAnswer",
                         "yy-MM-dd HH:mm",
                         "https://i.ibb.co/whTbKKD/Eok-Cph-XVQAk-PNw-T.jpg"

@@ -20,6 +20,6 @@
     <string name="recent_photo" translatable="false">Recent Photo #%s</string>
 
     <string name="home">Home</string>
-    <string name="friends_list">Friends List</string>
+    <string name="friends">Friends</string>
     <string name="setting">Setting</string>
 </resources>

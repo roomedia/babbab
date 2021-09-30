@@ -14,13 +14,13 @@ sealed class Screen(
     @StringRes val name: Int,
 ) {
     object Home : Screen("home", Icons.Default.Home, R.string.home)
-    object FriendsList : Screen("friends_list", Icons.Default.Search, R.string.friends_list)
+    object Friends : Screen("friends", Icons.Default.Search, R.string.friends)
     object Settings : Screen("settings", Icons.Default.Settings, R.string.setting)
 
     companion object {
         val items = listOf(
             Home,
-            FriendsList,
+            Friends,
             Settings,
         )
     }
