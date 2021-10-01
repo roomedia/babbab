@@ -65,7 +65,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun insertUserToFirebaseRealtimeDatabase(uid: String, displayName: String?, email: String?) {
-        val user = User(uid, displayName, email)
+        val user = User(displayName, email)
         Firebase.database.getReference("user").child(uid).setValue(user).addOnSuccessListener {
             Timber.d("Success to insert user")
         }.addOnFailureListener {

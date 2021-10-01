@@ -139,15 +139,15 @@ fun UserItemPreview() {
     BabbabTheme {
         Scaffold {
             UserItem(
-                User("uid", "USER#1", "email@host.com"),
+                User("USER#1", "email@host.com"),
                 mutableStateOf(FriendshipState.IS_STRANGER)
             )
             UserItem(
-                User("uid", "USER#2", "email@host.com"),
+                User("USER#2", "email@host.com"),
                 mutableStateOf(FriendshipState.PENDING_RESPONSE)
             )
             UserItem(
-                User("uid", "USER#3", "email@host.com"),
+                User("USER#3", "email@host.com"),
                 mutableStateOf(FriendshipState.IS_FRIEND)
             )
         }
