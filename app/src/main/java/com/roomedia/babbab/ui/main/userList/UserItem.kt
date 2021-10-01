@@ -46,7 +46,7 @@ fun UserItem(user: User, friendshipState: MutableState<FriendshipState>) {
                     },
                 ),
                 // TODO: get current User Name from uid
-                contentDescription = stringResource(R.string.profile_image, user.uid),
+                contentDescription = stringResource(R.string.profile_image, user.displayName ?: "Unknown"),
                 modifier = Modifier
                     .size(40.dp)
                     .clip(Shapes.small),
