@@ -72,6 +72,7 @@ fun UserItem(user: User, friendshipState: MutableState<FriendshipState>) {
                     FriendshipState.IS_FRIEND -> RoundedCornerTextButton(text = "️x") {
                         friendshipEvent.value = FriendshipEvent.ON_DISCONNECT
                     }
+                    FriendshipState.IS_ME -> RoundedCornerTextButton(text = "me") {}
                 }
             }
         }
@@ -138,18 +139,24 @@ fun UserItem(user: User, friendshipState: MutableState<FriendshipState>) {
 fun UserItemPreview() {
     BabbabTheme {
         Scaffold {
-            UserItem(
-                User("USER#1", "email@host.com"),
-                mutableStateOf(FriendshipState.IS_STRANGER)
-            )
-            UserItem(
-                User("USER#2", "email@host.com"),
-                mutableStateOf(FriendshipState.PENDING_RESPONSE)
-            )
-            UserItem(
-                User("USER#3", "email@host.com"),
-                mutableStateOf(FriendshipState.IS_FRIEND)
-            )
+            Column {
+                UserItem(
+                    User("uid", "USER#1", "email@host.com"),
+                    mutableStateOf(FriendshipState.IS_STRANGER)
+                )
+                UserItem(
+                    User("uid", "USER#2", "email@host.com"),
+                    mutableStateOf(FriendshipState.PENDING_RESPONSE)
+                )
+                UserItem(
+                    User("uid", "USER#3", "email@host.com"),
+                    mutableStateOf(FriendshipState.IS_FRIEND)
+                )
+                UserItem(
+                    User("uid", "USER#4", "email@host.com"),
+                    mutableStateOf(FriendshipState.IS_ME)
+                )
+            }
         }
     }
 }

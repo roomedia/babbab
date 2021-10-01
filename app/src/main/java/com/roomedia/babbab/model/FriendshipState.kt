@@ -4,4 +4,5 @@ enum class FriendshipState {
     IS_STRANGER,
     PENDING_RESPONSE,
     IS_FRIEND,
+    IS_ME,
 }

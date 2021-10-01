@@ -51,6 +51,7 @@ interface Friends {
 
     fun User.getFriendshipState(uid: String): FriendshipState {
         return when (uid) {
+            this.uid -> FriendshipState.IS_ME
             in friends -> FriendshipState.IS_FRIEND
             in pending -> FriendshipState.PENDING_RESPONSE
             else -> FriendshipState.IS_STRANGER
