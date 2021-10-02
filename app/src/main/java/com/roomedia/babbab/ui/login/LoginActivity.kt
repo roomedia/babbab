@@ -10,6 +10,7 @@ import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.ktx.messaging
 import com.roomedia.babbab.R
 import com.roomedia.babbab.extension.startActivityForResult
 import com.roomedia.babbab.model.User
@@ -49,8 +50,10 @@ class LoginActivity : AppCompatActivity() {
     private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult) {
         if (result.resultCode == RESULT_OK) {
             Timber.d("Sign in successful!")
-            Firebase.auth.currentUser?.apply {
-                insertUserToFirebaseRealtimeDatabase(uid, displayName, email)
+            if (result.idpResponse?.isNewUser == true) {
+                Firebase.auth.currentUser?.apply {
+                    insertUserToFirebaseRealtimeDatabase(uid, displayName, email)
+                }
             }
             startPreviousActivity()
         } else {
@@ -65,11 +68,13 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun insertUserToFirebaseRealtimeDatabase(uid: String, displayName: String?, email: String?) {
-        val user = User(uid, displayName, email)
-        Firebase.database.getReference("user").child(uid).setValue(user).addOnSuccessListener {
-            Timber.d("Success to insert user")
-        }.addOnFailureListener {
-            Timber.d("Fail to insert user: $it")
+        Firebase.messaging.token.addOnSuccessListener { deviceToken ->
+            val user = User(uid, displayName, email, devices = listOf(deviceToken))
+            Firebase.database.getReference("user").child(uid).setValue(user).addOnSuccessListener {
+                Timber.d("Success to insert user")
+            }.addOnFailureListener {
+                Timber.d("Fail to insert user: $it")
+            }
         }
     }
 

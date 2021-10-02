@@ -12,6 +12,9 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import coil.ImageLoader
 import coil.request.ImageRequest
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.roomedia.babbab.R
@@ -77,12 +80,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         Timber.d("Refreshed token: $token")
-        sendRegistrationToServer(token)
-    }
-
-    private fun sendRegistrationToServer(token: String?) {
-        // TODO: Implement this method to send token to your app server.
-        Timber.d("sendRegistrationTokenToServer($token)")
+        Firebase.auth.currentUser?.run {
+            Firebase.database.getReference("user/$uid/devices").setValue(token)
+        }
     }
 
     companion object {

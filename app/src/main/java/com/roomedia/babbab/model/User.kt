@@ -11,4 +11,5 @@ data class User(
     val email: String? = null,
     val friends: List<String> = listOf(),
     val pending: List<String> = listOf(),
+    val devices: List<String> = listOf(),
 )
