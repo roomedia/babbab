@@ -8,11 +8,22 @@ import com.roomedia.babbab.model.FriendshipState
 import com.roomedia.babbab.model.User
 
 @Composable
-fun UserList(userList: List<Pair<User, FriendshipState>>) {
+fun UserList(
+    userList: List<Pair<User, FriendshipState>>,
+    sendRequest: (User) -> Unit = {},
+    cancelRequest: (User) -> Unit = {},
+    disconnectRequest: (User) -> Unit = {},
+) {
     LazyColumn {
         items(userList.size) {
             val (user, state) = userList[it]
-            UserItem(user, remember { mutableStateOf(state) })
+            UserItem(
+                user = user,
+                friendshipState = remember { mutableStateOf(state) },
+                sendRequest = sendRequest,
+                cancelRequest = cancelRequest,
+                disconnectRequest = disconnectRequest,
+            )
         }
     }
 }

@@ -28,7 +28,13 @@ import com.roomedia.babbab.ui.theme.BabbabTheme
 import com.roomedia.babbab.ui.theme.Shapes
 
 @Composable
-fun UserItem(user: User, friendshipState: MutableState<FriendshipState>) {
+fun UserItem(
+    user: User,
+    friendshipState: MutableState<FriendshipState>,
+    sendRequest: (User) -> Unit = {},
+    cancelRequest: (User) -> Unit = {},
+    disconnectRequest: (User) -> Unit = {},
+) {
     val friendshipEvent = remember { mutableStateOf(FriendshipEvent.ON_CLEAR) }
     Card(
         modifier = Modifier
@@ -85,7 +91,7 @@ fun UserItem(user: User, friendshipState: MutableState<FriendshipState>) {
                     },
                     confirmButton = {
                         BorderlessTextButton(text = "✔️") {
-                            // TODO: Request Friend
+                            sendRequest(user)
                             friendshipState.value = FriendshipState.PENDING_RESPONSE
                             friendshipEvent.value = FriendshipEvent.ON_CLEAR
                         }
@@ -101,7 +107,7 @@ fun UserItem(user: User, friendshipState: MutableState<FriendshipState>) {
                 )
             }
             FriendshipEvent.ON_CANCEL -> {
-                // TODO: Invalidate request
+                cancelRequest(user)
                 friendshipState.value = FriendshipState.IS_STRANGER
             }
             FriendshipEvent.ON_DISCONNECT -> {
@@ -111,7 +117,7 @@ fun UserItem(user: User, friendshipState: MutableState<FriendshipState>) {
                     },
                     confirmButton = {
                         BorderlessTextButton(text = "✔️") {
-                            // TODO: Disconnect Friend
+                            disconnectRequest(user)
                             friendshipState.value = FriendshipState.IS_STRANGER
                             friendshipEvent.value = FriendshipEvent.ON_CLEAR
                         }

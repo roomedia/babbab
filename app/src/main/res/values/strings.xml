@@ -10,6 +10,11 @@
     <string name="answer_text" translatable="false">🙋💬🍚🤤</string>
     <string name="answer_from" translatable="false">Answer from %s</string>
 
+    <string name="request_friend_notification_channel_id" translatable="false">request_friend_channel</string>
+    <string name="request_friend_notification_channel_name" translatable="false">👤+</string>
+    <string name="request_friend_text" translatable="false">🙋💬👤+🥺</string>
+    <string name="request_friend_from" translatable="false">Request from %s</string>
+
     <string name="sign_in_error" translatable="false">⚠️🌐❌🥺</string>
     <string name="send_answer_error" translatable="false">⚠️🍚📸❌🥺</string>
 
@@ -22,4 +27,6 @@
     <string name="home">Home</string>
     <string name="friends">Friends</string>
     <string name="setting">Setting</string>
+    <string name="refuse_friend_request">❌</string>
+    <string name="accept_friend_request">✔️</string>
 </resources>

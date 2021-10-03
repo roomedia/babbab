@@ -52,9 +52,30 @@ interface Friends {
     fun User.getFriendshipState(uid: String): FriendshipState {
         return when (uid) {
             this.uid -> FriendshipState.IS_ME
-            in friends -> FriendshipState.IS_FRIEND
-            in pending -> FriendshipState.PENDING_RESPONSE
+            in friends.values -> FriendshipState.IS_FRIEND
+            in sendRequest.values -> FriendshipState.PENDING_RESPONSE
             else -> FriendshipState.IS_STRANGER
+        }
+    }
+
+    fun sendRequestToDatabase(user: User) {
+        val uid = Firebase.auth.currentUser?.uid
+            ?: throw IllegalAccessError("to send request, requester must have uid.")
+
+        Firebase.database.getReference("user").apply {
+            val sendRequestRef = child("$uid/sendRequest")
+            val updatedSendRequest = mapOf(
+                sendRequestRef.push().key to user.uid,
+            )
+            sendRequestRef.updateChildren(updatedSendRequest)
+                .addOnFailureListener { Timber.e(it.stackTraceToString()) }
+
+            val receiveRequestRef = child("${user.uid}/receiveRequest")
+            val updatedReceiveRequest = mapOf(
+                receiveRequestRef.push().key to uid,
+            )
+            receiveRequestRef.updateChildren(updatedReceiveRequest)
+                .addOnFailureListener { Timber.e(it.stackTraceToString()) }
         }
     }
 
@@ -66,7 +87,14 @@ interface Friends {
 
         BabbabTheme {
             Scaffold(topBar = { SearchBar(queryTextState) }) {
-                UserList(userAndFriendshipListState.value)
+                UserList(
+                    userList = userAndFriendshipListState.value,
+                    sendRequest = { user ->
+                        sendRequestToDatabase(user)
+                    },
+                    cancelRequest = {},
+                    disconnectRequest = {},
+                )
             }
         }
     }

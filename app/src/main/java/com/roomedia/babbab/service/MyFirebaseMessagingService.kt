@@ -31,8 +31,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Timber.d("From: ${remoteMessage.from}")
             val intent = Intent(baseContext, MainActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            val requestId = remoteMessage.senderId.hashCode()
+            val pendingIntentFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            } else {
+                PendingIntent.FLAG_UPDATE_CURRENT
+            }
             val pendingIntent =
-                PendingIntent.getActivity(baseContext, 0, intent, PendingIntent.FLAG_ONE_SHOT)
+                PendingIntent.getActivity(baseContext, requestId, intent, pendingIntentFlag)
 
             val title = remoteMessage.notification?.title ?: ""
             val body = remoteMessage.notification?.body ?: ""
@@ -43,13 +49,26 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     .let { ImageLoader(baseContext).execute(it) }
                     .let { (it.drawable as BitmapDrawable).bitmap }
             }
+            val clickActions = remoteMessage.notification?.clickAction?.let {
+                Pair(
+                    PendingIntent.getActivity(baseContext, requestId, intent, pendingIntentFlag),
+                    PendingIntent.getActivity(baseContext, requestId, intent, pendingIntentFlag)
+                )
+            }
 
-            val (channelId, channelName) = if (image == null) {
-                Pair(getString(R.string.question_notification_channel_id),
-                    getString(R.string.question_notification_channel_name))
-            } else {
-                Pair(getString(R.string.answer_notification_channel_id),
-                    getString(R.string.answer_notification_channel_name))
+            val (channelId, channelName) = when {
+                image != null -> Pair(
+                    getString(R.string.answer_notification_channel_id),
+                    getString(R.string.answer_notification_channel_name)
+                )
+                clickActions != null -> Pair(
+                    getString(R.string.request_friend_notification_channel_id),
+                    getString(R.string.request_friend_notification_channel_name)
+                )
+                else -> Pair(
+                    getString(R.string.question_notification_channel_id),
+                    getString(R.string.question_notification_channel_name)
+                )
             }
 
             val notificationBuilder = NotificationCompat.Builder(baseContext, channelId)
@@ -62,6 +81,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     if (image == null) return@run this
                     setLargeIcon(image)
                     setStyle(NotificationCompat.BigPictureStyle().bigPicture(image))
+                }
+                .run {
+                    if (clickActions == null) return@run this
+                    val (refuseRequest, acceptRequest) = clickActions
+                    addAction(0, getString(R.string.refuse_friend_request), refuseRequest)
+                    addAction(0, getString(R.string.accept_friend_request), acceptRequest)
                 }
 
             val notificationManager =
@@ -81,7 +106,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         Timber.d("Refreshed token: $token")
         Firebase.auth.currentUser?.run {
-            Firebase.database.getReference("user/$uid/devices").setValue(token)
+            Firebase.database.getReference("user/$uid/devices").apply {
+                updateChildren(mapOf(push().key to token))
+            }
         }
     }
 
