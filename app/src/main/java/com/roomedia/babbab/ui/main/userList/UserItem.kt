@@ -51,16 +51,15 @@ fun UserItem(
                         crossfade(true)
                     },
                 ),
-                // TODO: get current User Name from uid
-                contentDescription = stringResource(R.string.profile_image, user.displayName ?: "Unknown"),
+                contentDescription = stringResource(R.string.profile_image, user.displayName),
                 modifier = Modifier
                     .size(40.dp)
                     .clip(Shapes.small),
             )
             Spacer(Modifier.width(8.dp))
             Column {
-                Text("${user.displayName}")
-                Text("${user.email}")
+                Text(user.displayName)
+                Text(user.email)
             }
             Box(
                 modifier = Modifier

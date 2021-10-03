@@ -21,7 +21,7 @@ import com.google.firebase.ktx.Firebase
 import com.roomedia.babbab.BuildConfig
 import com.roomedia.babbab.R
 import com.roomedia.babbab.model.DeviceNotificationModel
-import com.roomedia.babbab.model.NotificationModel
+import com.roomedia.babbab.model.NotificationChannelEnum
 import com.roomedia.babbab.service.ApiClient
 import com.roomedia.babbab.ui.main.alertDialog.AnswerPopup
 import com.roomedia.babbab.ui.main.alertDialog.QuestionPopup
@@ -78,11 +78,10 @@ interface Home {
     fun AppCompatActivity.sendQuestion() {
         val model = DeviceNotificationModel(
             // TODO : change to device group token
-            "eVDowI2PRF-T6C3_XfhXNB:APA91bHW2noxUWHeVVgKOBO31L5IZYPenVIb6UDLd7r657ro6Zh08rSsbf-TRSeXFhbxVfSLieNk4Q3zYEYt7St-Rr3D0-kI4nGf_Xuu9T5Q_2aa736DsVlTduW0WcgZTW0Srdl_kh2a",
-            NotificationModel(
-                getString(R.string.question_from, Firebase.auth.currentUser?.displayName),
-                getString(R.string.question_text)
-            )
+            to = "eVDowI2PRF-T6C3_XfhXNB:APA91bHW2noxUWHeVVgKOBO31L5IZYPenVIb6UDLd7r657ro6Zh08rSsbf-TRSeXFhbxVfSLieNk4Q3zYEYt7St-Rr3D0-kI4nGf_Xuu9T5Q_2aa736DsVlTduW0WcgZTW0Srdl_kh2a",
+            channelId = NotificationChannelEnum.Question.id,
+            title = getString(R.string.question_from, Firebase.auth.currentUser?.displayName),
+            body = getString(R.string.question_text),
         )
         lifecycleScope.launch(Dispatchers.IO) {
             val result = ApiClient.messageService.sendNotification(model)
@@ -107,12 +106,11 @@ interface Home {
         lifecycleScope.launch(Dispatchers.IO) {
             val deviceNotificationModel = DeviceNotificationModel(
                 // TODO : change to device group token
-                "eVDowI2PRF-T6C3_XfhXNB:APA91bHW2noxUWHeVVgKOBO31L5IZYPenVIb6UDLd7r657ro6Zh08rSsbf-TRSeXFhbxVfSLieNk4Q3zYEYt7St-Rr3D0-kI4nGf_Xuu9T5Q_2aa736DsVlTduW0WcgZTW0Srdl_kh2a",
-                NotificationModel(
-                    getString(R.string.answer_from, Firebase.auth.currentUser?.displayName),
-                    getString(R.string.answer_text),
-                    ApiClient.imageUploadService.upload(image).data.medium.url
-                )
+                to = "eVDowI2PRF-T6C3_XfhXNB:APA91bHW2noxUWHeVVgKOBO31L5IZYPenVIb6UDLd7r657ro6Zh08rSsbf-TRSeXFhbxVfSLieNk4Q3zYEYt7St-Rr3D0-kI4nGf_Xuu9T5Q_2aa736DsVlTduW0WcgZTW0Srdl_kh2a",
+                channelId = NotificationChannelEnum.Answer.id,
+                title = getString(R.string.answer_from, Firebase.auth.currentUser?.displayName),
+                body = getString(R.string.answer_text),
+                image = ApiClient.imageUploadService.upload(image).data.medium.url,
             )
             ApiClient.messageService.sendNotification(deviceNotificationModel)
         }
@@ -125,7 +123,7 @@ interface Home {
 
         NotificationList()
         SendNotificationButtons(showQuestionPopup, showAnswerPopup)
-        QuestionPopup(showQuestionPopup, { sendQuestion() })
+        QuestionPopup(showQuestionPopup) { sendQuestion() }
         AnswerPopup(
             showDialog = showAnswerPopup,
             sendAnswer = { sendAnswer() },

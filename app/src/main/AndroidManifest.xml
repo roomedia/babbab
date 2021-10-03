@@ -55,6 +55,8 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/fileproviders" />
         </provider>
+
+        <receiver android:name=".broadcastReceiver.FriendRequestBroadcastReceiver" />
     </application>
 
 </manifest>

@@ -7,28 +7,44 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.roomedia.babbab.R
+import com.roomedia.babbab.model.DeviceNotificationModel
 import com.roomedia.babbab.model.FriendshipState
+import com.roomedia.babbab.model.NotificationChannelEnum
 import com.roomedia.babbab.model.User
+import com.roomedia.babbab.service.ApiClient
 import com.roomedia.babbab.ui.main.userList.SearchBar
 import com.roomedia.babbab.ui.main.userList.UserList
 import com.roomedia.babbab.ui.theme.BabbabTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 interface Friends {
     fun MutableState<List<Pair<User, FriendshipState>>>.queryValue(queryText: String) {
         Firebase.database.getReference("user").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val uid = Firebase.auth.currentUser?.uid ?: return
+                val currentUserUid = Firebase.auth.currentUser?.uid
+                    ?: throw IllegalAccessError("to send request, user must sign in.")
+                val userSnapshot = snapshot.child(currentUserUid)
+
                 value = if (queryText == "") {
-                    snapshot.getFriends(uid)
+                    (userSnapshot.getUserList("friends", FriendshipState.IS_FRIEND)
+                            + userSnapshot.getUserList("sendRequest", FriendshipState.PENDING_RESPONSE)
+                            + userSnapshot.getUserList("receiveRequest", FriendshipState.IS_STRANGER))
                 } else {
-                    snapshot.queryUsers(queryText).map { Pair(it, it.getFriendshipState(uid)) }
+                    val currentUser = userSnapshot.getValue(User::class.java)
+                        ?: throw IllegalAccessError("to send request, user must sign in.")
+
+                    snapshot.queryUsers(queryText)
+                        .map { Pair(it, currentUser.getFriendshipState(it.uid)) }
                 }
             }
 
@@ -38,10 +54,10 @@ interface Friends {
         })
     }
 
-    fun DataSnapshot.getFriends(uid: String): List<Pair<User, FriendshipState>> {
-        return child("$uid/friends").children
+    fun DataSnapshot.getUserList(category: String, friendshipState: FriendshipState): List<Pair<User, FriendshipState>> {
+        return child(category).children
             .mapNotNull { child("${it.value}").getValue(User::class.java) }
-            .map { Pair(it, FriendshipState.IS_FRIEND) }
+            .map { Pair(it, friendshipState) }
     }
 
     fun DataSnapshot.queryUsers(queryText: String): List<User> {
@@ -55,6 +71,24 @@ interface Friends {
             in friends.values -> FriendshipState.IS_FRIEND
             in sendRequest.values -> FriendshipState.PENDING_RESPONSE
             else -> FriendshipState.IS_STRANGER
+        }
+    }
+
+    fun AppCompatActivity.sendNotification(user: User) {
+        val sender = Firebase.auth.currentUser?.let { it.displayName ?: it.email }
+            ?: throw IllegalAccessError("to send request, user must sign in.")
+
+        user.devices.values.forEach { token ->
+            val model = DeviceNotificationModel(
+                to = token,
+                channelId = NotificationChannelEnum.SendRequest.id,
+                title = getString(R.string.request_friend_from, sender),
+                body = getString(R.string.request_friend_text),
+            )
+            lifecycleScope.launch(Dispatchers.IO) {
+                val result = ApiClient.messageService.sendNotification(model)
+                Timber.d("$result")
+            }
         }
     }
 
@@ -90,6 +124,7 @@ interface Friends {
                 UserList(
                     userList = userAndFriendshipListState.value,
                     sendRequest = { user ->
+                        sendNotification(user)
                         sendRequestToDatabase(user)
                     },
                     cancelRequest = {},

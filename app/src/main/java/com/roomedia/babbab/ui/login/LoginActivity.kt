@@ -52,7 +52,8 @@ class LoginActivity : AppCompatActivity() {
             Timber.d("Sign in successful!")
             if (result.idpResponse?.isNewUser == true) {
                 Firebase.auth.currentUser?.apply {
-                    insertUserToFirebaseRealtimeDatabase(uid, displayName, email)
+                    val email = email ?: throw IllegalAccessError("user must sign in using email.")
+                    insertUserToFirebaseRealtimeDatabase(uid, displayName ?: "", email)
                 }
             }
             startPreviousActivity()
@@ -67,10 +68,12 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun insertUserToFirebaseRealtimeDatabase(uid: String, displayName: String?, email: String?) {
+    private fun insertUserToFirebaseRealtimeDatabase(uid: String, displayName: String, email: String) {
+        val uidRef = Firebase.database.getReference("user/$uid")
         Firebase.messaging.token.addOnSuccessListener { deviceToken ->
-            val user = User(uid, displayName, email, devices = listOf(deviceToken))
-            Firebase.database.getReference("user").child(uid).setValue(user).addOnSuccessListener {
+            val key = uidRef.push().key ?: ""
+            val user = User(uid, displayName, email, devices = mapOf(key to deviceToken))
+            uidRef.setValue(user).addOnSuccessListener {
                 Timber.d("Success to insert user")
             }.addOnFailureListener {
                 Timber.d("Fail to insert user: $it")

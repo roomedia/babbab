@@ -1,17 +1,11 @@
 <resources>
     <string name="app_name">밥밥</string>
-    <string name="question_notification_channel_id" translatable="false">question_channel</string>
-    <string name="question_notification_channel_name" translatable="false">🍚🍚??</string>
     <string name="question_text" translatable="false">💭🍚🥯🧇🍟🍜🍛???</string>
     <string name="question_from" translatable="false">Question from %s</string>
 
-    <string name="answer_notification_channel_id" translatable="false">answer_channel</string>
-    <string name="answer_notification_channel_name" translatable="false">🍚🍚!!</string>
     <string name="answer_text" translatable="false">🙋💬🍚🤤</string>
     <string name="answer_from" translatable="false">Answer from %s</string>
 
-    <string name="request_friend_notification_channel_id" translatable="false">request_friend_channel</string>
-    <string name="request_friend_notification_channel_name" translatable="false">👤+</string>
     <string name="request_friend_text" translatable="false">🙋💬👤+🥺</string>
     <string name="request_friend_from" translatable="false">Request from %s</string>
 
