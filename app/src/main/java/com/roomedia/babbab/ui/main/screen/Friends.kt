@@ -28,13 +28,14 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 interface Friends {
+    val currentUserUid: String
+        get() = Firebase.auth.uid
+            ?: throw IllegalAccessError("to enter Friends screen, user must sign in.")
+
     fun MutableState<List<Pair<User, FriendshipState>>>.queryValue(queryText: String) {
         Firebase.database.getReference("user").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val currentUserUid = Firebase.auth.currentUser?.uid
-                    ?: throw IllegalAccessError("to send request, user must sign in.")
                 val userSnapshot = snapshot.child(currentUserUid)
-
                 value = if (queryText == "") {
                     (userSnapshot.getUserList("friends", FriendshipState.IS_FRIEND)
                             + userSnapshot.getUserList("sendRequest", FriendshipState.PENDING_RESPONSE)
@@ -81,6 +82,7 @@ interface Friends {
         user.devices.values.forEach { token ->
             val model = DeviceNotificationModel(
                 to = token,
+                senderId = currentUserUid,
                 channelId = NotificationChannelEnum.SendRequest.id,
                 title = getString(R.string.request_friend_from, sender),
                 body = getString(R.string.request_friend_text),
@@ -92,24 +94,35 @@ interface Friends {
         }
     }
 
-    fun sendRequestToDatabase(user: User) {
-        val uid = Firebase.auth.currentUser?.uid
-            ?: throw IllegalAccessError("to send request, requester must have uid.")
-
+    fun sendRequestToDatabase(senderUid: String, receiverUid: String) {
         Firebase.database.getReference("user").apply {
-            val sendRequestRef = child("$uid/sendRequest")
+            val sendRequestRef = child("$senderUid/sendRequest")
             val updatedSendRequest = mapOf(
-                sendRequestRef.push().key to user.uid,
+                sendRequestRef.push().key to receiverUid,
             )
             sendRequestRef.updateChildren(updatedSendRequest)
                 .addOnFailureListener { Timber.e(it.stackTraceToString()) }
 
-            val receiveRequestRef = child("${user.uid}/receiveRequest")
+            val receiveRequestRef = child("${receiverUid}/receiveRequest")
             val updatedReceiveRequest = mapOf(
-                receiveRequestRef.push().key to uid,
+                receiveRequestRef.push().key to senderUid,
             )
             receiveRequestRef.updateChildren(updatedReceiveRequest)
                 .addOnFailureListener { Timber.e(it.stackTraceToString()) }
+        }
+    }
+
+    fun cancelRequestToDatabase(senderUid: String, receiverUid: String) {
+        Firebase.database.getReference("user").apply {
+            child("$senderUid/sendRequest").get().addOnSuccessListener { snapshot ->
+                snapshot.children.firstOrNull { it.value == receiverUid }?.ref?.removeValue()
+                    ?.addOnFailureListener { Timber.e(it.stackTraceToString()) }
+            }
+
+            child("${receiverUid}/receiveRequest").get().addOnSuccessListener { snapshot ->
+                snapshot.children.firstOrNull { it.value == senderUid }?.ref?.removeValue()
+                    ?.addOnFailureListener { Timber.e(it.stackTraceToString()) }
+            }
         }
     }
 
@@ -123,11 +136,13 @@ interface Friends {
             Scaffold(topBar = { SearchBar(queryTextState) }) {
                 UserList(
                     userList = userAndFriendshipListState.value,
-                    sendRequest = { user ->
-                        sendNotification(user)
-                        sendRequestToDatabase(user)
+                    sendRequest = { receiver ->
+                        sendNotification(receiver)
+                        sendRequestToDatabase(currentUserUid, receiver.uid)
                     },
-                    cancelRequest = {},
+                    cancelRequest = { receiver ->
+                        cancelRequestToDatabase(currentUserUid, receiver.uid)
+                    },
                     disconnectRequest = {},
                 )
             }

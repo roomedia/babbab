@@ -46,7 +46,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 NotificationChannelEnum.values()
                     .first { channelId == it.id }
                     .run { Pair(id, channelName) }
-            } ?: throw IllegalArgumentException("remote message doesn't contain channel id")
+            } ?: throw IllegalArgumentException("remote message must contain channel id")
 
             val notificationBuilder = NotificationCompat.Builder(baseContext, channelId)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -62,8 +62,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 }
                 .run {
                     if (channelId != NotificationChannelEnum.SendRequest.id) return@run this
-                    val refuseRequest = FriendRequestBroadcastReceiver.onRefuse(baseContext)
-                    val acceptRequest = FriendRequestBroadcastReceiver.onAccept(baseContext)
+                    val senderId = remoteMessage.notification?.tag
+                        ?: throw java.lang.IllegalArgumentException("send request message must contain sender id as tag")
+                    val refuseRequest = FriendRequestBroadcastReceiver.onRefuse(baseContext, senderId)
+                    val acceptRequest = FriendRequestBroadcastReceiver.onAccept(baseContext, senderId)
                     addAction(0, getString(R.string.refuse_friend_request), refuseRequest)
                     addAction(0, getString(R.string.accept_friend_request), acceptRequest)
                 }
