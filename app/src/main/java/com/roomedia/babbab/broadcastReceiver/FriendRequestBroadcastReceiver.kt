@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.roomedia.babbab.ui.main.screen.Friends
-import timber.log.Timber
 
 class FriendRequestBroadcastReceiver : BroadcastReceiver(), Friends {
     override fun onReceive(context: Context, intent: Intent) {
@@ -17,9 +16,9 @@ class FriendRequestBroadcastReceiver : BroadcastReceiver(), Friends {
         }
         val senderId = intent.getStringExtra(KEY_SENDER_ID) ?: return
         if (intent.getBooleanExtra(KEY_IS_ACCEPTED, false)) {
-            Timber.d("accepted")
+            acceptRequest(currentUserUid, senderId)
         } else {
-            cancelRequestToDatabase(senderId, currentUserUid)
+            refuseRequest(currentUserUid, senderId)
         }
     }
 

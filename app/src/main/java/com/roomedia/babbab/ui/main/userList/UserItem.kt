@@ -68,13 +68,24 @@ fun UserItem(
                 contentAlignment = Alignment.CenterEnd,
             ) {
                 when (friendshipState.value) {
-                    FriendshipState.IS_STRANGER -> RoundedCornerTextButton(text = "️+") {
+                    FriendshipState.IS_STRANGER -> RoundedCornerTextButton(text = "️add") {
                         friendshipEvent.value = FriendshipEvent.ON_REQUEST
                     }
-                    FriendshipState.PENDING_RESPONSE -> RoundedCornerTextButton(text = "...") {
+                    FriendshipState.SEND_REQUEST -> RoundedCornerTextButton(text = "cancel") {
                         friendshipEvent.value = FriendshipEvent.ON_CANCEL
                     }
-                    FriendshipState.IS_FRIEND -> RoundedCornerTextButton(text = "️x") {
+                    FriendshipState.RECEIVE_REQUEST -> {
+                        Row {
+                            RoundedCornerTextButton(text = "refuse") {
+                                friendshipEvent.value = FriendshipEvent.ON_REFUSE
+                            }
+                            Spacer(Modifier.width(4.dp))
+                            RoundedCornerTextButton(text = "accept") {
+                                friendshipEvent.value = FriendshipEvent.ON_ACCEPT
+                            }
+                        }
+                    }
+                    FriendshipState.IS_FRIEND -> RoundedCornerTextButton(text = "️disconnect") {
                         friendshipEvent.value = FriendshipEvent.ON_DISCONNECT
                     }
                     FriendshipState.IS_ME -> RoundedCornerTextButton(text = "me") {}
@@ -82,7 +93,6 @@ fun UserItem(
             }
         }
         when (friendshipEvent.value) {
-            FriendshipEvent.ON_CLEAR -> {}
             FriendshipEvent.ON_REQUEST -> {
                 AlertDialog(
                     onDismissRequest = {
@@ -91,7 +101,7 @@ fun UserItem(
                     confirmButton = {
                         BorderlessTextButton(text = "✔️") {
                             sendRequest(user)
-                            friendshipState.value = FriendshipState.PENDING_RESPONSE
+                            friendshipState.value = FriendshipState.SEND_REQUEST
                             friendshipEvent.value = FriendshipEvent.ON_CLEAR
                         }
                     },
@@ -131,6 +141,7 @@ fun UserItem(
                     },
                 )
             }
+            else -> {}
         }
     }
 }
@@ -151,7 +162,7 @@ fun UserItemPreview() {
                 )
                 UserItem(
                     User("uid", "USER#2", "email@host.com"),
-                    mutableStateOf(FriendshipState.PENDING_RESPONSE)
+                    mutableStateOf(FriendshipState.SEND_REQUEST)
                 )
                 UserItem(
                     User("uid", "USER#3", "email@host.com"),
@@ -160,6 +171,10 @@ fun UserItemPreview() {
                 UserItem(
                     User("uid", "USER#4", "email@host.com"),
                     mutableStateOf(FriendshipState.IS_ME)
+                )
+                UserItem(
+                    User("uid", "USER#5", "email@host.com"),
+                    mutableStateOf(FriendshipState.RECEIVE_REQUEST)
                 )
             }
         }
