@@ -16,7 +16,7 @@ class FriendRequestBroadcastReceiver : BroadcastReceiver(), Friends {
         }
         val senderId = intent.getStringExtra(KEY_SENDER_ID) ?: return
         if (intent.getBooleanExtra(KEY_IS_ACCEPTED, false)) {
-            acceptRequest(currentUserUid, senderId)
+            acceptRequest(currentUserUid, senderId, context)
         } else {
             refuseRequest(currentUserUid, senderId)
         }

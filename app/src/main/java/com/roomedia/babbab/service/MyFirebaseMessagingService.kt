@@ -66,8 +66,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                         ?: throw java.lang.IllegalArgumentException("send request message must contain sender id as tag")
                     val refuseRequest = FriendRequestBroadcastReceiver.onRefuse(baseContext, senderId)
                     val acceptRequest = FriendRequestBroadcastReceiver.onAccept(baseContext, senderId)
-                    addAction(0, getString(R.string.refuse_friend_request), refuseRequest)
-                    addAction(0, getString(R.string.accept_friend_request), acceptRequest)
+                    addAction(0, "❌", refuseRequest)
+                    addAction(0, "✔️", acceptRequest)
                 }
 
             val notificationManager =

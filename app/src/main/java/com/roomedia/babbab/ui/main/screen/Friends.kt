@@ -1,5 +1,6 @@
 package com.roomedia.babbab.ui.main.screen
 
+import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
@@ -7,7 +8,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -20,6 +20,7 @@ import com.roomedia.babbab.service.ApiClient
 import com.roomedia.babbab.ui.main.userList.SearchBar
 import com.roomedia.babbab.ui.main.userList.UserList
 import com.roomedia.babbab.ui.theme.BabbabTheme
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -27,6 +28,9 @@ import timber.log.Timber
 interface Friends {
     val currentUserUid: String
         get() = Firebase.auth.uid
+            ?: throw IllegalAccessError("to enter Friends screen, user must sign in.")
+    val currentUserNameOrEmail: String
+        get() = Firebase.auth.currentUser?.let { it.displayName ?: it.email }
             ?: throw IllegalAccessError("to enter Friends screen, user must sign in.")
 
     fun MutableState<List<Pair<User, FriendshipState>>>.queryValue(queryText: String) {
@@ -72,21 +76,30 @@ interface Friends {
         }
     }
 
-    fun AppCompatActivity.sendNotification(user: User, message: String) {
-        val sender = Firebase.auth.currentUser?.let { it.displayName ?: it.email }
-            ?: throw IllegalAccessError("to send request, user must sign in.")
-
+    private fun Context.sendNotification(user: User, channel: NotificationChannelEnum, title: String, message: String) {
         user.devices.values.forEach { token ->
             val model = DeviceNotificationModel(
                 to = token,
                 senderId = currentUserUid,
-                channelId = NotificationChannelEnum.SendRequest.id,
-                title = getString(R.string.request_friend_from, sender),
+                channelId = channel.id,
+                title = title,
                 body = message,
             )
-            lifecycleScope.launch(Dispatchers.IO) {
+            CoroutineScope(Dispatchers.IO).launch {
                 val result = ApiClient.messageService.sendNotification(model)
                 Timber.d("$result")
+            }
+        }
+    }
+
+    fun Context.sendRequestNotification(user: User, title: String, message: String) {
+        sendNotification(user, NotificationChannelEnum.SendRequest, title, message)
+    }
+
+    fun Context.sendRequestAcceptedNotification(uid: String, title: String, message: String) {
+        Firebase.database.getReference("user/$uid").get().addOnSuccessListener { snapshot ->
+            snapshot.getValue(User::class.java)?.also { user ->
+                sendNotification(user, NotificationChannelEnum.RequestAccepted, title, message)
             }
         }
     }
@@ -112,8 +125,8 @@ interface Friends {
         }
     }
 
-    fun AppCompatActivity.sendRequest(receiver: User, message: String) {
-        sendNotification(receiver, message)
+    fun Context.sendRequest(receiver: User, message: String) {
+        sendRequestNotification(receiver, getString(R.string.request_friend_from, currentUserNameOrEmail), message)
         setDatabaseValue(currentUserUid, receiver.uid, FriendshipEvent.ON_REQUEST)
     }
 
@@ -121,7 +134,12 @@ interface Friends {
         removeDatabaseValue(userUid, otherUid, FriendshipEvent.ON_REFUSE)
     }
 
-    fun acceptRequest(userUid: String, otherUid: String) {
+    fun acceptRequest(userUid: String, otherUid: String, context: Context) {
+        context.sendRequestAcceptedNotification(
+            otherUid,
+            context.getString(R.string.request_accepted_from, currentUserNameOrEmail),
+            "🥳❤️"
+        )
         removeDatabaseValue(userUid, otherUid, FriendshipEvent.ON_REFUSE)
         setDatabaseValue(userUid, otherUid, FriendshipEvent.ON_ACCEPT)
     }
