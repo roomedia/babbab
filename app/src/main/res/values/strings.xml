@@ -1,14 +1,13 @@
 <resources>
     <string name="app_name">밥밥</string>
-    <string name="question_notification_channel_id" translatable="false">question_channel</string>
-    <string name="question_notification_channel_name" translatable="false">🍚🍚??</string>
     <string name="question_text" translatable="false">💭🍚🥯🧇🍟🍜🍛???</string>
     <string name="question_from" translatable="false">Question from %s</string>
 
-    <string name="answer_notification_channel_id" translatable="false">answer_channel</string>
-    <string name="answer_notification_channel_name" translatable="false">🍚🍚!!</string>
     <string name="answer_text" translatable="false">🙋💬🍚🤤</string>
     <string name="answer_from" translatable="false">Answer from %s</string>
+
+    <string name="request_friend_from" translatable="false">Request from %s</string>
+    <string name="request_accepted_from" translatable="false">Request Accepted from %s</string>
 
     <string name="sign_in_error" translatable="false">⚠️🌐❌🥺</string>
     <string name="send_answer_error" translatable="false">⚠️🍚📸❌🥺</string>
@@ -18,4 +17,8 @@
     <string name="take_photo" translatable="false">Take Photo</string>
     <string name="select_photo" translatable="false">Select Photo</string>
     <string name="recent_photo" translatable="false">Recent Photo #%s</string>
+
+    <string name="home">Home</string>
+    <string name="friends">Friends</string>
+    <string name="setting">Setting</string>
 </resources>

@@ -26,7 +26,7 @@ fun BorderlessTextButton(text: String, onClick: () -> Unit) {
     uiMode = Configuration.UI_MODE_NIGHT_YES,
 )
 @Composable
-fun DefaultPreview() {
+fun BorderlessTextButtonPreview() {
     BabbabTheme {
         BorderlessTextButton("text") {}
     }

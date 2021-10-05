@@ -10,6 +10,7 @@ import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.ktx.messaging
 import com.roomedia.babbab.R
 import com.roomedia.babbab.extension.startActivityForResult
 import com.roomedia.babbab.model.User
@@ -49,8 +50,11 @@ class LoginActivity : AppCompatActivity() {
     private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult) {
         if (result.resultCode == RESULT_OK) {
             Timber.d("Sign in successful!")
-            Firebase.auth.currentUser?.apply {
-                insertUserToFirebaseRealtimeDatabase(uid, displayName, email)
+            if (result.idpResponse?.isNewUser == true) {
+                Firebase.auth.currentUser?.apply {
+                    val email = email ?: throw IllegalAccessError("user must sign in using email.")
+                    insertUserToFirebaseRealtimeDatabase(uid, displayName ?: "", email)
+                }
             }
             startPreviousActivity()
         } else {
@@ -64,10 +68,16 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun insertUserToFirebaseRealtimeDatabase(uid: String, displayName: String?, email: String?) {
-        val user = User(displayName, email)
-        Firebase.database.getReference("user").child(uid).setValue(user).addOnSuccessListener {
-            Timber.d("Insert user successful!")
+    private fun insertUserToFirebaseRealtimeDatabase(uid: String, displayName: String, email: String) {
+        val uidRef = Firebase.database.getReference("user/$uid")
+        Firebase.messaging.token.addOnSuccessListener { deviceToken ->
+            val key = uidRef.push().key ?: ""
+            val user = User(uid, displayName, email, devices = mapOf(key to deviceToken))
+            uidRef.setValue(user).addOnSuccessListener {
+                Timber.d("Success to insert user")
+            }.addOnFailureListener {
+                Timber.d("Fail to insert user: $it")
+            }
         }
     }
 

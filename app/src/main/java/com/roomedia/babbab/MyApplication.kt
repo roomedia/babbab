@@ -12,6 +12,7 @@ class MyApplication : Application() {
         super.onCreate()
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
+            Firebase.auth.signOut()
             Firebase.auth.useEmulator("10.0.2.2", 9099)
             Firebase.database.useEmulator("10.0.2.2", 9000)
             Firebase.messaging.token.addOnCompleteListener { task ->
@@ -21,7 +22,6 @@ class MyApplication : Application() {
                 }
                 Timber.d(task.result)
             }
-            Firebase.auth.signOut()
         }
     }
 }
