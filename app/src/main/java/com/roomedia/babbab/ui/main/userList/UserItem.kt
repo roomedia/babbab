@@ -3,10 +3,9 @@ package com.roomedia.babbab.ui.main.userList
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Card
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -31,7 +30,7 @@ import com.roomedia.babbab.ui.theme.Shapes
 fun UserItem(
     user: User,
     friendshipState: MutableState<FriendshipState>,
-    sendRequest: (User) -> Unit = {},
+    sendRequest: (User, String) -> Unit = { _, _ -> },
     cancelRequest: (User) -> Unit = {},
     disconnectRequest: (User) -> Unit = {},
 ) {
@@ -75,11 +74,11 @@ fun UserItem(
                         friendshipEvent.value = FriendshipEvent.ON_CANCEL
                     }
                     FriendshipState.RECEIVE_REQUEST -> {
-                        Row {
+                        Column {
                             RoundedCornerTextButton(text = "refuse") {
                                 friendshipEvent.value = FriendshipEvent.ON_REFUSE
                             }
-                            Spacer(Modifier.width(4.dp))
+                            Spacer(Modifier.height(4.dp))
                             RoundedCornerTextButton(text = "accept") {
                                 friendshipEvent.value = FriendshipEvent.ON_ACCEPT
                             }
@@ -94,13 +93,14 @@ fun UserItem(
         }
         when (friendshipEvent.value) {
             FriendshipEvent.ON_REQUEST -> {
+                val message = remember { mutableStateOf("🙋💬👤+🥺") }
                 AlertDialog(
                     onDismissRequest = {
                         friendshipEvent.value = FriendshipEvent.ON_CLEAR
                     },
                     confirmButton = {
                         BorderlessTextButton(text = "✔️") {
-                            sendRequest(user)
+                            sendRequest(user, message.value)
                             friendshipState.value = FriendshipState.SEND_REQUEST
                             friendshipEvent.value = FriendshipEvent.ON_CLEAR
                         }
@@ -113,11 +113,39 @@ fun UserItem(
                     title = {
                         Text("👤+ ${user.displayName}")
                     },
+                    text = {
+                        OutlinedTextField(
+                            value = message.value,
+                            onValueChange = { message.value = it },
+                            trailingIcon = {
+                                if (message.value == "") return@OutlinedTextField
+                                IconButton(
+                                    onClick = { message.value = "" },
+                                    content = {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Clear Message Text",
+                                            modifier = Modifier.padding(15.dp).size(24.dp),
+                                        )
+                                    },
+                                )
+                            },
+                        )
+                    }
                 )
             }
             FriendshipEvent.ON_CANCEL -> {
                 cancelRequest(user)
                 friendshipState.value = FriendshipState.IS_STRANGER
+                friendshipEvent.value = FriendshipEvent.ON_CLEAR
+            }
+            FriendshipEvent.ON_REFUSE -> {
+                friendshipState.value = FriendshipState.IS_STRANGER
+                friendshipEvent.value = FriendshipEvent.ON_CLEAR
+            }
+            FriendshipEvent.ON_ACCEPT -> {
+                friendshipState.value = FriendshipState.IS_FRIEND
+                friendshipEvent.value = FriendshipEvent.ON_CLEAR
             }
             FriendshipEvent.ON_DISCONNECT -> {
                 AlertDialog(
@@ -173,7 +201,7 @@ fun UserItemPreview() {
                     mutableStateOf(FriendshipState.IS_ME)
                 )
                 UserItem(
-                    User("uid", "USER#5", "email@host.com"),
+                    User("uid", "USER#5", "what_if_long_long_email@host.com"),
                     mutableStateOf(FriendshipState.RECEIVE_REQUEST)
                 )
             }

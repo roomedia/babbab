@@ -72,7 +72,7 @@ interface Friends {
         }
     }
 
-    fun AppCompatActivity.sendNotification(user: User) {
+    fun AppCompatActivity.sendNotification(user: User, message: String) {
         val sender = Firebase.auth.currentUser?.let { it.displayName ?: it.email }
             ?: throw IllegalAccessError("to send request, user must sign in.")
 
@@ -82,7 +82,7 @@ interface Friends {
                 senderId = currentUserUid,
                 channelId = NotificationChannelEnum.SendRequest.id,
                 title = getString(R.string.request_friend_from, sender),
-                body = getString(R.string.request_friend_text),
+                body = message,
             )
             lifecycleScope.launch(Dispatchers.IO) {
                 val result = ApiClient.messageService.sendNotification(model)
@@ -112,8 +112,8 @@ interface Friends {
         }
     }
 
-    fun AppCompatActivity.sendRequest(receiver: User) {
-        sendNotification(receiver)
+    fun AppCompatActivity.sendRequest(receiver: User, message: String) {
+        sendNotification(receiver, message)
         setDatabaseValue(currentUserUid, receiver.uid, FriendshipEvent.ON_REQUEST)
     }
 
@@ -136,7 +136,9 @@ interface Friends {
             Scaffold(topBar = { SearchBar(queryTextState) }) {
                 UserList(
                     userList = userAndFriendshipListState.value,
-                    sendRequest = { sendRequest(it) },
+                    sendRequest = { receiver, message ->
+                        sendRequest(receiver, message)
+                    },
                     cancelRequest = { receiver ->
                         removeDatabaseValue(currentUserUid, receiver.uid, FriendshipEvent.ON_CANCEL)
                     },

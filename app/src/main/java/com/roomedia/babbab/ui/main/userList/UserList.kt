@@ -10,9 +10,9 @@ import com.roomedia.babbab.model.User
 @Composable
 fun UserList(
     userList: List<Pair<User, FriendshipState>>,
-    sendRequest: (User) -> Unit = {},
-    cancelRequest: (User) -> Unit = {},
-    disconnectRequest: (User) -> Unit = {},
+    sendRequest: (User, String) -> Unit,
+    cancelRequest: (User) -> Unit,
+    disconnectRequest: (User) -> Unit,
 ) {
     LazyColumn {
         items(userList.size) {

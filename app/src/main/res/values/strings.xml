@@ -6,7 +6,6 @@
     <string name="answer_text" translatable="false">🙋💬🍚🤤</string>
     <string name="answer_from" translatable="false">Answer from %s</string>
 
-    <string name="request_friend_text" translatable="false">🙋💬👤+🥺</string>
     <string name="request_friend_from" translatable="false">Request from %s</string>
 
     <string name="sign_in_error" translatable="false">⚠️🌐❌🥺</string>
