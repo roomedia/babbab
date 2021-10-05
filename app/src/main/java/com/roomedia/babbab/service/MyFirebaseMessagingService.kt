@@ -55,6 +55,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 .setSound(DEFAULT_SOUND_URI)
                 .setContentIntent(getContentIntent(requestId))
                 .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
                 .run {
                     if (image == null) return@run this
                     setLargeIcon(image)
@@ -76,11 +77,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 val channel = NotificationChannel(
                     channelId,
                     channelName,
-                    NotificationManager.IMPORTANCE_DEFAULT
+                    NotificationManager.IMPORTANCE_HIGH
                 )
                 notificationManager.createNotificationChannel(channel)
             }
-            notificationManager.notify(0, notificationBuilder.build())
+            notificationManager.notify(baseContext.hashCode(), notificationBuilder.build())
         }
     }
 

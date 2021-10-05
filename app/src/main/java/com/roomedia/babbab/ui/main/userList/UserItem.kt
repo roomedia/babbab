@@ -32,6 +32,8 @@ fun UserItem(
     friendshipState: MutableState<FriendshipState>,
     sendRequest: (User, String) -> Unit = { _, _ -> },
     cancelRequest: (User) -> Unit = {},
+    refuseRequest: (User) -> Unit = {},
+    acceptRequest: (User) -> Unit = {},
     disconnectRequest: (User) -> Unit = {},
 ) {
     val friendshipEvent = remember { mutableStateOf(FriendshipEvent.ON_CLEAR) }
@@ -140,10 +142,12 @@ fun UserItem(
                 friendshipEvent.value = FriendshipEvent.ON_CLEAR
             }
             FriendshipEvent.ON_REFUSE -> {
+                refuseRequest(user)
                 friendshipState.value = FriendshipState.IS_STRANGER
                 friendshipEvent.value = FriendshipEvent.ON_CLEAR
             }
             FriendshipEvent.ON_ACCEPT -> {
+                acceptRequest(user)
                 friendshipState.value = FriendshipState.IS_FRIEND
                 friendshipEvent.value = FriendshipEvent.ON_CLEAR
             }

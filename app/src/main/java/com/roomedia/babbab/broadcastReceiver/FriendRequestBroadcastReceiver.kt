@@ -16,9 +16,9 @@ class FriendRequestBroadcastReceiver : BroadcastReceiver(), Friends {
         }
         val senderId = intent.getStringExtra(KEY_SENDER_ID) ?: return
         if (intent.getBooleanExtra(KEY_IS_ACCEPTED, false)) {
-            acceptRequest(currentUserUid, senderId, context)
+            context.acceptRequest(senderId, context)
         } else {
-            refuseRequest(currentUserUid, senderId)
+            context.refuseRequest(senderId)
         }
     }
 
@@ -29,6 +29,7 @@ class FriendRequestBroadcastReceiver : BroadcastReceiver(), Friends {
 
         fun onRefuse(context: Context, senderId: String) : PendingIntent {
             return Intent(context, FriendRequestBroadcastReceiver::class.java)
+                .putExtra(KEY_NOTIFICATION_ID, context.hashCode())
                 .putExtra(KEY_IS_ACCEPTED, false)
                 .putExtra(KEY_SENDER_ID, senderId)
                 .toPendingIntent(context)
@@ -36,6 +37,7 @@ class FriendRequestBroadcastReceiver : BroadcastReceiver(), Friends {
 
         fun onAccept(context: Context, senderId: String) : PendingIntent {
             return Intent(context, FriendRequestBroadcastReceiver::class.java)
+                .putExtra(KEY_NOTIFICATION_ID, context.hashCode())
                 .putExtra(KEY_IS_ACCEPTED, true)
                 .putExtra(KEY_SENDER_ID, senderId)
                 .toPendingIntent(context)

@@ -1,6 +1,7 @@
 package com.roomedia.babbab.ui.main.screen
 
 import android.content.Context
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
@@ -36,13 +37,12 @@ interface Friends {
     fun MutableState<List<Pair<User, FriendshipState>>>.queryValue(queryText: String) {
         Firebase.database.getReference("user").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val userSnapshot = snapshot.child(currentUserUid)
                 value = if (queryText == "") {
-                    (userSnapshot.getUserList("friends", FriendshipState.IS_FRIEND)
-                            + userSnapshot.getUserList("sendRequest", FriendshipState.SEND_REQUEST)
-                            + userSnapshot.getUserList("receiveRequest", FriendshipState.RECEIVE_REQUEST))
+                    (snapshot.getUserList("$currentUserUid/friends", FriendshipState.IS_FRIEND)
+                            + snapshot.getUserList("$currentUserUid/sendRequest", FriendshipState.SEND_REQUEST)
+                            + snapshot.getUserList("$currentUserUid/receiveRequest", FriendshipState.RECEIVE_REQUEST))
                 } else {
-                    val currentUser = userSnapshot.getValue(User::class.java)
+                    val currentUser = snapshot.child(currentUserUid).getValue(User::class.java)
                         ?: throw IllegalAccessError("to send request, user must sign in.")
 
                     snapshot.queryUsers(queryText)
@@ -72,11 +72,12 @@ interface Friends {
             this.uid -> FriendshipState.IS_ME
             in friends.values -> FriendshipState.IS_FRIEND
             in sendRequest.values -> FriendshipState.SEND_REQUEST
+            in receiveRequest.values -> FriendshipState.RECEIVE_REQUEST
             else -> FriendshipState.IS_STRANGER
         }
     }
 
-    private fun Context.sendNotification(user: User, channel: NotificationChannelEnum, title: String, message: String) {
+    private fun sendNotification(user: User, channel: NotificationChannelEnum, title: String, message: String) {
         user.devices.values.forEach { token ->
             val model = DeviceNotificationModel(
                 to = token,
@@ -92,14 +93,24 @@ interface Friends {
         }
     }
 
-    fun Context.sendRequestNotification(user: User, title: String, message: String) {
-        sendNotification(user, NotificationChannelEnum.SendRequest, title, message)
+    fun Context.sendRequestNotification(user: User, message: String) {
+        sendNotification(
+            user,
+            NotificationChannelEnum.SendRequest,
+            getString(R.string.request_friend_from, currentUserNameOrEmail),
+            message
+        )
     }
 
-    fun Context.sendRequestAcceptedNotification(uid: String, title: String, message: String) {
+    fun Context.sendRequestAcceptedNotification(uid: String) {
         Firebase.database.getReference("user/$uid").get().addOnSuccessListener { snapshot ->
             snapshot.getValue(User::class.java)?.also { user ->
-                sendNotification(user, NotificationChannelEnum.RequestAccepted, title, message)
+                sendNotification(
+                    user,
+                    NotificationChannelEnum.RequestAccepted,
+                    getString(R.string.request_accepted_from, currentUserNameOrEmail),
+                    "🥳❤️"
+                )
             }
         }
     }
@@ -114,34 +125,89 @@ interface Friends {
         }
     }
 
-    private fun removeDatabaseValue(userUid: String, otherUid: String, friendshipEvent: FriendshipEvent) {
+    private fun removeDatabaseValue(userUid: String, otherUid: String) {
         Firebase.database.getReference("user").apply {
-            child("$userUid/${friendshipEvent.userDst}").get().addOnSuccessListener { snapshot ->
-                snapshot.children.firstOrNull { it.value == otherUid }?.ref?.removeValue()
+            listOf("friends", "sendRequest", "receiveRequest").forEach { dst ->
+                child("$userUid/$dst").get().addOnSuccessListener { snapshot ->
+                    snapshot.children.firstOrNull { it.value == otherUid }?.ref?.removeValue()
+                }
+                child("$otherUid/$dst").get().addOnSuccessListener { snapshot ->
+                    snapshot.children.firstOrNull { it.value == userUid }?.ref?.removeValue()
+                }
             }
-            child("$otherUid/${friendshipEvent.otherDst}").get().addOnSuccessListener { snapshot ->
-                snapshot.children.firstOrNull { it.value == userUid }?.ref?.removeValue()
+        }
+    }
+
+    fun Context.getSyncDatabase(otherUid: String, friendshipState: FriendshipState, onSuccess: () -> Unit, onError: () -> Unit) {
+        Firebase.database.getReference("user/$currentUserUid").get().addOnSuccessListener { snapshot ->
+            val currentUser = snapshot.getValue(User::class.java)
+                ?: throw IllegalAccessError("user must sign in.")
+
+            if (currentUser.getFriendshipState(otherUid) == friendshipState) {
+                onSuccess()
+            } else {
+                onError()
+                Toast.makeText(this, "🤷😥🔄🙇", Toast.LENGTH_LONG).show()
             }
         }
     }
 
     fun Context.sendRequest(receiver: User, message: String) {
-        sendRequestNotification(receiver, getString(R.string.request_friend_from, currentUserNameOrEmail), message)
-        setDatabaseValue(currentUserUid, receiver.uid, FriendshipEvent.ON_REQUEST)
-    }
-
-    fun refuseRequest(userUid: String, otherUid: String) {
-        removeDatabaseValue(userUid, otherUid, FriendshipEvent.ON_REFUSE)
-    }
-
-    fun acceptRequest(userUid: String, otherUid: String, context: Context) {
-        context.sendRequestAcceptedNotification(
-            otherUid,
-            context.getString(R.string.request_accepted_from, currentUserNameOrEmail),
-            "🥳❤️"
+        getSyncDatabase(
+            otherUid = receiver.uid,
+            friendshipState = FriendshipState.IS_STRANGER,
+            onSuccess = {
+                sendRequestNotification(receiver, message)
+                setDatabaseValue(currentUserUid, receiver.uid, FriendshipEvent.ON_REQUEST)
+            },
+            onError = {},
         )
-        removeDatabaseValue(userUid, otherUid, FriendshipEvent.ON_REFUSE)
-        setDatabaseValue(userUid, otherUid, FriendshipEvent.ON_ACCEPT)
+    }
+
+    fun Context.cancelRequest(otherUid: String) {
+        getSyncDatabase(
+            otherUid = otherUid,
+            friendshipState = FriendshipState.SEND_REQUEST,
+            onSuccess = {
+                removeDatabaseValue(currentUserUid, otherUid)
+            },
+            onError = {},
+        )
+    }
+
+    fun Context.refuseRequest(otherUid: String) {
+        getSyncDatabase(
+            otherUid = otherUid,
+            friendshipState = FriendshipState.RECEIVE_REQUEST,
+            onSuccess = {
+                removeDatabaseValue(currentUserUid, otherUid)
+            },
+            onError = {},
+        )
+    }
+
+    fun Context.acceptRequest(otherUid: String, context: Context) {
+        getSyncDatabase(
+            otherUid = otherUid,
+            friendshipState = FriendshipState.RECEIVE_REQUEST,
+            onSuccess = {
+                context.sendRequestAcceptedNotification(otherUid)
+                removeDatabaseValue(currentUserUid, otherUid)
+                setDatabaseValue(currentUserUid, otherUid, FriendshipEvent.ON_ACCEPT)
+            },
+            onError = {},
+        )
+    }
+
+    fun Context.disconnectRequest(otherUid: String) {
+        getSyncDatabase(
+            otherUid = otherUid,
+            friendshipState = FriendshipState.IS_FRIEND,
+            onSuccess = {
+                removeDatabaseValue(currentUserUid, otherUid)
+            },
+            onError = {},
+        )
     }
 
     @Composable
@@ -158,10 +224,16 @@ interface Friends {
                         sendRequest(receiver, message)
                     },
                     cancelRequest = { receiver ->
-                        removeDatabaseValue(currentUserUid, receiver.uid, FriendshipEvent.ON_CANCEL)
+                        cancelRequest(receiver.uid)
+                    },
+                    refuseRequest = { receiver ->
+                        refuseRequest(receiver.uid)
+                    },
+                    acceptRequest = { receiver ->
+                        acceptRequest(receiver.uid, baseContext)
                     },
                     disconnectRequest = { receiver ->
-                        removeDatabaseValue(currentUserUid, receiver.uid, FriendshipEvent.ON_DISCONNECT)
+                        disconnectRequest(receiver.uid)
                     },
                 )
             }

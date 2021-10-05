@@ -12,6 +12,8 @@ fun UserList(
     userList: List<Pair<User, FriendshipState>>,
     sendRequest: (User, String) -> Unit,
     cancelRequest: (User) -> Unit,
+    refuseRequest: (User) -> Unit,
+    acceptRequest: (User) -> Unit,
     disconnectRequest: (User) -> Unit,
 ) {
     LazyColumn {
@@ -22,6 +24,8 @@ fun UserList(
                 friendshipState = remember { mutableStateOf(state) },
                 sendRequest = sendRequest,
                 cancelRequest = cancelRequest,
+                refuseRequest = refuseRequest,
+                acceptRequest = acceptRequest,
                 disconnectRequest = disconnectRequest,
             )
         }
