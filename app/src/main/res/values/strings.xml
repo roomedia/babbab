@@ -21,4 +21,15 @@
     <string name="home">Home</string>
     <string name="friends">Friends</string>
     <string name="setting">Setting</string>
+
+    <string name="see_more">See More</string>
+
+    <string name="image_settings">Image Settings</string>
+
+    <string name="check_for_update">Check for Update</string>
+    <string name="send_feedback">Send Feedback</string>
+
+    <string name="terms_of_service">Terms of Service</string>
+    <string name="privacy">Privacy</string>
+    <string name="open_source_licenses">Open Source Licenses</string>
 </resources>
