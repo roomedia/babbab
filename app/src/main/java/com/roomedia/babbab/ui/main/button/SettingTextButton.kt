@@ -21,29 +21,33 @@ fun SettingTextButton(
     modifier: Modifier = Modifier,
     text: String,
     subtext: String? = null,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
+    showArrow: Boolean = true,
 ) {
     Button(
-        onClick = onClick,
+        onClick = onClick ?: {},
         modifier = modifier.fillMaxWidth(),
+        enabled = onClick != null,
         elevation = null,
-        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.background),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = MaterialTheme.colors.background,
+            disabledBackgroundColor = MaterialTheme.colors.background,
+            disabledContentColor = contentColorFor(MaterialTheme.colors.background),
+        ),
     ) {
-        Text(
-            text = text,
-            modifier = Modifier.align(Alignment.Bottom),
-        )
+        Text(text)
         if (subtext != null) {
             Spacer(Modifier.width(4.dp))
             Text(
                 text = subtext,
-                modifier = Modifier.align(Alignment.Bottom),
                 color = MaterialTheme.colors.onBackground.copy(0.6f),
                 fontSize = 12.sp,
             )
         }
         Box(Modifier.fillMaxWidth(), Alignment.CenterEnd) {
-            Icon(Icons.Default.KeyboardArrowRight, stringResource(R.string.see_more))
+            if (showArrow) {
+                Icon(Icons.Default.KeyboardArrowRight, stringResource(R.string.see_more))
+            }
         }
     }
 }
@@ -53,13 +57,15 @@ fun SettingTextButton(
     modifier: Modifier = Modifier,
     @StringRes textId: Int,
     @StringRes subtextId: Int? = null,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
+    showArrow: Boolean = true,
 ) {
     SettingTextButton(
         modifier = modifier,
         text = stringResource(textId),
         subtext = subtextId?.let { stringResource(it) },
         onClick = onClick,
+        showArrow = showArrow,
     )
 }
 
@@ -76,16 +82,24 @@ fun SettingTextButton(
 fun SettingTextButtonPreview() {
     BabbabTheme {
         Column {
-            SettingTextButton(text = "TEXT") {}
-            SettingTextButton(textId = R.string.app_name) {}
+            SettingTextButton(
+                text = "TEXT",
+                showArrow = false,
+            )
+            SettingTextButton(
+                textId = R.string.app_name,
+                showArrow = false,
+            )
             SettingTextButton(
                 text = "TEXT",
                 subtext = "subtext",
-            ) {}
+                onClick = {},
+            )
             SettingTextButton(
                 textId = R.string.app_name,
                 subtextId = R.string.app_name,
-            ) {}
+                onClick = {},
+            )
         }
     }
 }

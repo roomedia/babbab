@@ -26,7 +26,8 @@
 
     <string name="image_settings">Image Settings</string>
 
-    <string name="check_for_update">Check for Update</string>
+    <string name="current_version">Current Version: %s</string>
+    <string name="update_application">Update Application</string>
     <string name="send_feedback">Send Feedback</string>
 
     <string name="terms_of_service">Terms of Service</string>
