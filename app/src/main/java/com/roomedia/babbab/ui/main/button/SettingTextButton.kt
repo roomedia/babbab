@@ -26,7 +26,7 @@ fun SettingTextButton(
 ) {
     Button(
         onClick = onClick ?: {},
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp),
         enabled = onClick != null,
         elevation = null,
         colors = ButtonDefaults.buttonColors(

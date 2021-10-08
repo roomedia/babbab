@@ -25,6 +25,13 @@
     <string name="see_more">See More</string>
 
     <string name="image_settings">Image Settings</string>
+    <string name="image_caution">The image has a 32MB capacity limit, and for high-definition images, the resolution may be lowered.</string>
+    <string name="auto_delete_image">Auto Delete Image: %s</string>
+    <string name="time_after">After %d %s</string>
+    <string name="minute">minute(s)</string>
+    <string name="hour">hour(s)</string>
+    <string name="day">day(s)</string>
+    <string name="week">week(s)</string>
 
     <string name="current_version">Current Version: %s</string>
     <string name="update_application">Update Application</string>
