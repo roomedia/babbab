@@ -24,20 +24,28 @@
 
     <string name="see_more">See More</string>
 
+    <string name="profile_settings">Profile Settings</string>
+    <string name="display_name">Name</string>
+    <string name="email">E-Mail</string>
+    <string name="log_out">Log Out</string>
+
     <string name="image_settings">Image Settings</string>
     <string name="image_caution">The image has a 32MB capacity limit, and for high-definition images, the resolution may be lowered.</string>
-    <string name="auto_delete_image">Auto Delete Image: %s</string>
+    <string name="auto_delete_image">Auto Delete Image</string>
     <string name="time_after">After %d %s</string>
     <string name="minute">minute(s)</string>
     <string name="hour">hour(s)</string>
     <string name="day">day(s)</string>
     <string name="week">week(s)</string>
+    <string name="terms_of_service">Terms of Service</string>
+    <string name="privacy">Privacy</string>
 
+    <string name="app_info">App Info</string>
     <string name="current_version">Current Version: %s</string>
     <string name="update_application">Update Application</string>
     <string name="send_feedback">Send Feedback</string>
+   <string name="open_source_licenses">Open Source Licenses</string>
 
-    <string name="terms_of_service">Terms of Service</string>
-    <string name="privacy">Privacy</string>
-    <string name="open_source_licenses">Open Source Licenses</string>
+    <string name="account">Account</string>
+    <string name="delete_account">Delete Account</string>
 </resources>

@@ -36,6 +36,7 @@ import com.roomedia.babbab.ui.main.screen.Settings
 import com.roomedia.babbab.ui.theme.BabbabTheme
 import com.roomedia.babbab.util.checkSelfPermissionCompat
 import com.roomedia.babbab.util.requestPermissionsCompat
+import java.util.*
 
 class MainActivity : AppCompatActivity(), Home, Friends, Settings, ActivityCompat.OnRequestPermissionsResultCallback {
 
@@ -46,6 +47,8 @@ class MainActivity : AppCompatActivity(), Home, Friends, Settings, ActivityCompa
         registerForActivityResult(ActivityResultContracts.TakePicture()) { setPhotoUri() }
     override val selectPhotoLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent(), ::setPhotoUri)
+
+    override val settingsScreenTime = mutableStateOf(0L)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,7 +74,10 @@ class MainActivity : AppCompatActivity(), Home, Friends, Settings, ActivityCompa
                     ) {
                         composable(Screen.Home.route, content = { Home() })
                         composable(Screen.Friends.route, content = { Friends() })
-                        composable(Screen.Settings.route, content = { Settings() })
+                        composable(Screen.Settings.route, content = {
+                            settingsScreenTime.value = Date().time
+                            Settings()
+                        })
                     }
                 }
             }

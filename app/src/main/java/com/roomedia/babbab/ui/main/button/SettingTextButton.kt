@@ -26,7 +26,7 @@ fun SettingTextButton(
 ) {
     Button(
         onClick = onClick ?: {},
-        modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp),
+        modifier = modifier.fillMaxWidth(),
         enabled = onClick != null,
         elevation = null,
         colors = ButtonDefaults.buttonColors(
@@ -35,16 +35,17 @@ fun SettingTextButton(
             disabledContentColor = contentColorFor(MaterialTheme.colors.background),
         ),
     ) {
-        Text(text)
+        Text(text, modifier = Modifier.alignByBaseline())
         if (subtext != null) {
             Spacer(Modifier.width(4.dp))
             Text(
                 text = subtext,
+                modifier = Modifier.alignByBaseline(),
                 color = MaterialTheme.colors.onBackground.copy(0.6f),
                 fontSize = 12.sp,
             )
         }
-        Box(Modifier.fillMaxWidth(), Alignment.CenterEnd) {
+        Box(Modifier.fillMaxWidth().alignByBaseline(), Alignment.CenterEnd) {
             if (showArrow) {
                 Icon(Icons.Default.KeyboardArrowRight, stringResource(R.string.see_more))
             }
