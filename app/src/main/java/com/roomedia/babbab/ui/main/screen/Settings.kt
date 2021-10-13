@@ -3,8 +3,13 @@ package com.roomedia.babbab.ui.main.screen
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Base64
+import android.widget.Toast
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -22,11 +27,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.lifecycleScope
 import coil.compose.rememberImagePainter
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import com.google.android.play.core.appupdate.AppUpdateInfo
@@ -38,21 +45,59 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.roomedia.babbab.BuildConfig
 import com.roomedia.babbab.R
+import com.roomedia.babbab.service.ApiClient
 import com.roomedia.babbab.service.BabbabPreferences
 import com.roomedia.babbab.ui.login.LoginActivity
+import com.roomedia.babbab.ui.main.alertDialog.ImagePopupInterface
+import com.roomedia.babbab.ui.main.alertDialog.TextInputPopup
+import com.roomedia.babbab.ui.main.alertDialog.TextPopup
 import com.roomedia.babbab.ui.main.button.BorderlessTextButton
 import com.roomedia.babbab.ui.main.button.SettingTextButton
 import com.roomedia.babbab.ui.main.text.SectionText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.io.ByteArrayOutputStream
 import java.util.*
 
-interface Settings {
+interface Settings : ImagePopupInterface {
 
     val currentUser get() = Firebase.auth.currentUser
     val settingsScreenTime: MutableState<Long>
 
+    fun AppCompatActivity.updateProfile() {
+        val imageUri = targetUri.value ?: run {
+            Toast.makeText(this, R.string.send_answer_error, Toast.LENGTH_LONG).show()
+            return
+        }
+        val image = contentResolver.openInputStream(imageUri)
+            .run { BitmapFactory.decodeStream(this) }
+            .run {
+                ByteArrayOutputStream()
+                    .apply { compress(Bitmap.CompressFormat.JPEG, 100, this) }
+                    .toByteArray()
+            }
+            .run { Base64.encodeToString(this, Base64.DEFAULT) }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val uri = Uri.parse(
+                ApiClient.imageUploadService.upload(
+                    image = image,
+                    expiration = null,
+                ).data.medium.url
+            )
+            currentUser?.updateProfile(
+                UserProfileChangeRequest.Builder()
+                    .setPhotoUri(uri)
+                    .build()
+            )?.addOnSuccessListener {
+                settingsScreenTime.value = Date().time
+            }
+        }
+    }
+
     @Composable
-    fun Activity.ProfileSection() {
+    fun AppCompatActivity.ProfileSection() {
         Spacer(Modifier.height(32.dp))
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -76,42 +121,65 @@ interface Settings {
                 modifier = Modifier
                     .size(96.dp)
                     .clip(RoundedCornerShape(50)),
+                contentScale = ContentScale.Crop,
             )
             Spacer(Modifier.height(16.dp))
+
+            val showProfileChangePopup = remember { mutableStateOf(false) }
             BorderlessTextButton("✏️") {
-                currentUser?.updateProfile(
-                    UserProfileChangeRequest.Builder()
-                        .setPhotoUri(Uri.parse("Url"))
-                        .build()
-                )
-                settingsScreenTime.value = Date().time
+                showProfileChangePopup.value = true
             }
+            ImagePopup(
+                showDialog = showProfileChangePopup,
+                onConfirm = { updateProfile() },
+                title = "🙋💬📸",
+            )
         }
         SectionText(textId = R.string.profile_settings)
+
+        val showDisplayNameChangePopup = remember { mutableStateOf(false) }
+        val displayNameState = remember { mutableStateOf(currentUser?.displayName ?: "") }
         SettingTextButton(
             text = stringResource(R.string.display_name),
             subtext = currentUser?.displayName,
             onClick = {
+                showDisplayNameChangePopup.value = true
+            },
+        )
+        TextInputPopup(
+            showDialog = showDisplayNameChangePopup,
+            onConfirm = { name ->
                 currentUser?.updateProfile(
                     UserProfileChangeRequest.Builder()
-                        .setDisplayName(settingsScreenTime.value.toString())
+                        .setDisplayName(name)
                         .build()
-                )
-                settingsScreenTime.value = Date().time
+                )?.addOnSuccessListener {
+                    settingsScreenTime.value = Date().time
+                }
             },
+            title = "🙋💬📛",
+            textFieldState = displayNameState,
         )
         SettingTextButton(
             text = stringResource(R.string.email),
             subtext = currentUser?.email,
             showArrow = false,
         )
+        val showLogOutPopup = remember { mutableStateOf(false) }
         SettingTextButton(
             textId = R.string.log_out,
             onClick = {
+                showLogOutPopup.value = true
+            },
+        )
+        TextPopup(
+            showDialog = showLogOutPopup,
+            onConfirm = {
                 Firebase.auth.signOut()
                 startActivity(LoginActivity.createIntent(this))
                 finish()
             },
+            titleId = R.string.log_out_warning,
         )
         Divider()
     }
@@ -247,19 +315,27 @@ interface Settings {
     @Composable
     fun Activity.AccountInfoSection() {
         SectionText(textId = R.string.account)
+        val showDeleteAccountPopup = remember { mutableStateOf(false) }
         SettingTextButton(
             textId = R.string.delete_account,
             onClick = {
+                showDeleteAccountPopup.value = true
+            },
+        )
+        TextPopup(
+            showDialog = showDeleteAccountPopup,
+            onConfirm = {
                 Firebase.auth.currentUser?.delete()?.addOnSuccessListener {
                     startActivity(LoginActivity.createIntent(this))
                     finish()
                 }
             },
+            titleId = R.string.delete_account_warning,
         )
     }
 
     @Composable
-    fun Activity.Settings() {
+    fun AppCompatActivity.Settings() {
         Timber.d("Recomposing settings - ${settingsScreenTime.value}")
         Column(Modifier.verticalScroll(rememberScrollState())) {
             ProfileSection()
