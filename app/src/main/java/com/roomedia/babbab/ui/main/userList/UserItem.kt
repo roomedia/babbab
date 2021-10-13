@@ -3,9 +3,10 @@ package com.roomedia.babbab.ui.main.userList
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Card
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +22,7 @@ import com.roomedia.babbab.R
 import com.roomedia.babbab.model.FriendshipEvent
 import com.roomedia.babbab.model.FriendshipState
 import com.roomedia.babbab.model.User
+import com.roomedia.babbab.ui.main.alertDialog.TextInputPopup
 import com.roomedia.babbab.ui.main.button.BorderlessTextButton
 import com.roomedia.babbab.ui.main.button.RoundedCornerTextButton
 import com.roomedia.babbab.ui.theme.BabbabTheme
@@ -95,45 +97,18 @@ fun UserItem(
         }
         when (friendshipEvent.value) {
             FriendshipEvent.ON_REQUEST -> {
-                val message = remember { mutableStateOf("🙋💬👤+🥺") }
-                AlertDialog(
-                    onDismissRequest = {
+                val messageState = remember { mutableStateOf("🙋💬👤+🥺") }
+                TextInputPopup(
+                    onConfirm = { message ->
+                        sendRequest(user, message)
+                        friendshipState.value = FriendshipState.SEND_REQUEST
                         friendshipEvent.value = FriendshipEvent.ON_CLEAR
                     },
-                    confirmButton = {
-                        BorderlessTextButton(text = "✔️") {
-                            sendRequest(user, message.value)
-                            friendshipState.value = FriendshipState.SEND_REQUEST
-                            friendshipEvent.value = FriendshipEvent.ON_CLEAR
-                        }
+                    onDismiss = {
+                        friendshipEvent.value = FriendshipEvent.ON_CLEAR
                     },
-                    dismissButton = {
-                        BorderlessTextButton(text = "❌️") {
-                            friendshipEvent.value = FriendshipEvent.ON_CLEAR
-                        }
-                    },
-                    title = {
-                        Text("👤+ ${user.displayName}")
-                    },
-                    text = {
-                        OutlinedTextField(
-                            value = message.value,
-                            onValueChange = { message.value = it },
-                            trailingIcon = {
-                                if (message.value == "") return@OutlinedTextField
-                                IconButton(
-                                    onClick = { message.value = "" },
-                                    content = {
-                                        Icon(
-                                            Icons.Default.Close,
-                                            contentDescription = "Clear Message Text",
-                                            modifier = Modifier.padding(15.dp).size(24.dp),
-                                        )
-                                    },
-                                )
-                            },
-                        )
-                    }
+                    title = "👤+ ${user.displayName}",
+                    textFieldState = messageState,
                 )
             }
             FriendshipEvent.ON_CANCEL -> {

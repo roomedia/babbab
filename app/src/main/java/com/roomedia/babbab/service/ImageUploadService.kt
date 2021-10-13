@@ -12,6 +12,6 @@ interface ImageUploadService {
     suspend fun upload(
         @Field("image") image: String,
         @Query("key") key: String = "c1c90a2c1d62a26b01cfd6531cde3c53",
-        @Query("expiration") expiration: Int = BabbabPreferences.getImageExpiration().first,
+        @Query("expiration") expiration: Int? = BabbabPreferences.getImageExpiration().first,
     ): ImageUploadResponseModel
 }

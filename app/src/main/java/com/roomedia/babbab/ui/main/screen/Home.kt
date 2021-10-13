@@ -1,79 +1,30 @@
 package com.roomedia.babbab.ui.main.screen
 
-import android.content.ContentUris
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
-import android.provider.MediaStore
 import android.util.Base64
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.roomedia.babbab.BuildConfig
 import com.roomedia.babbab.R
 import com.roomedia.babbab.model.DeviceNotificationModel
 import com.roomedia.babbab.model.NotificationChannelEnum
 import com.roomedia.babbab.service.ApiClient
-import com.roomedia.babbab.ui.main.alertDialog.AnswerPopup
-import com.roomedia.babbab.ui.main.alertDialog.QuestionPopup
+import com.roomedia.babbab.ui.main.alertDialog.ImagePopupInterface
+import com.roomedia.babbab.ui.main.alertDialog.TextPopup
 import com.roomedia.babbab.ui.main.notificationList.NotificationList
 import com.roomedia.babbab.ui.main.notificationList.SendNotificationButtons
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
-import java.io.File
 
-interface Home {
-    val latestTmpUri: Uri
-    val targetUri: MutableState<Uri?>
-
-    val takePhotoLauncher: ActivityResultLauncher<Uri>
-    val selectPhotoLauncher: ActivityResultLauncher<String>
-
-    fun setPhotoUri(uri: Uri? = latestTmpUri) {
-        if (uri == null) return
-        targetUri.value = uri
-    }
-
-    fun Context.getTmpUri(): Uri {
-        val tmpFile = File.createTempFile("tmp_image_file", ".png", cacheDir).apply {
-            createNewFile()
-            deleteOnExit()
-        }
-        return FileProvider.getUriForFile(
-            applicationContext,
-            "${BuildConfig.APPLICATION_ID}.provider",
-            tmpFile
-        )
-    }
-
-    fun Context.getRecentPhotoUriList(): List<Uri?> {
-        val uriList = mutableListOf<Uri?>()
-        val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        val projection = arrayOf(
-            MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.DATE_ADDED,
-        )
-        val sortOrder =
-            MediaStore.Images.Media.DATE_ADDED + " DESC LIMIT $RECENT_PHOTO_COUNT"
-        contentResolver.query(contentUri, projection, null, null, sortOrder)?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            while (cursor.moveToNext()) {
-                uriList += ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
-            }
-        }
-        return uriList + arrayOfNulls(RECENT_PHOTO_COUNT - uriList.size)
-    }
+interface Home : ImagePopupInterface {
 
     fun AppCompatActivity.sendQuestion() {
         val model = DeviceNotificationModel(
@@ -123,18 +74,15 @@ interface Home {
 
         NotificationList()
         SendNotificationButtons(showQuestionPopup, showAnswerPopup)
-        QuestionPopup(showQuestionPopup) { sendQuestion() }
-        AnswerPopup(
-            showDialog = showAnswerPopup,
-            sendAnswer = { sendAnswer() },
-            takePhoto = { takePhotoLauncher.launch(latestTmpUri) },
-            selectPhoto = { selectPhotoLauncher.launch("image/*") },
-            recentUris = getRecentPhotoUriList(),
-            targetUri = targetUri,
+        TextPopup(
+            showDialog = showQuestionPopup,
+            onConfirm = { sendQuestion() },
+            titleId = R.string.question_text,
         )
-    }
-
-    companion object {
-        const val RECENT_PHOTO_COUNT = 2
+        ImagePopup(
+            showDialog = showAnswerPopup,
+            onConfirm = { sendAnswer() },
+            titleId = R.string.answer_text,
+        )
     }
 }
