@@ -29,15 +29,16 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.roomedia.babbab.ui.login.LoginActivity
-import com.roomedia.babbab.ui.main.button.BorderlessTextButton
 import com.roomedia.babbab.ui.main.screen.Friends
 import com.roomedia.babbab.ui.main.screen.Home
 import com.roomedia.babbab.ui.main.screen.Screen
+import com.roomedia.babbab.ui.main.screen.Settings
 import com.roomedia.babbab.ui.theme.BabbabTheme
 import com.roomedia.babbab.util.checkSelfPermissionCompat
 import com.roomedia.babbab.util.requestPermissionsCompat
+import java.util.*
 
-class MainActivity : AppCompatActivity(), Home, Friends, ActivityCompat.OnRequestPermissionsResultCallback {
+class MainActivity : AppCompatActivity(), Home, Friends, Settings, ActivityCompat.OnRequestPermissionsResultCallback {
 
     override val latestTmpUri by lazy { getTmpUri() }
     override val targetUri: MutableState<Uri?> = mutableStateOf(null)
@@ -46,6 +47,8 @@ class MainActivity : AppCompatActivity(), Home, Friends, ActivityCompat.OnReques
         registerForActivityResult(ActivityResultContracts.TakePicture()) { setPhotoUri() }
     override val selectPhotoLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent(), ::setPhotoUri)
+
+    override val settingsScreenTime = mutableStateOf(0L)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,9 +74,10 @@ class MainActivity : AppCompatActivity(), Home, Friends, ActivityCompat.OnReques
                     ) {
                         composable(Screen.Home.route, content = { Home() })
                         composable(Screen.Friends.route, content = { Friends() })
-                        composable(
-                            Screen.Settings.route,
-                            content = { BorderlessTextButton(text = "Settings") {} })
+                        composable(Screen.Settings.route, content = {
+                            settingsScreenTime.value = Date().time
+                            Settings()
+                        })
                     }
                 }
             }
