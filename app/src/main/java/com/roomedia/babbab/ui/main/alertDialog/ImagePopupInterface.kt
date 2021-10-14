@@ -1,11 +1,15 @@
 package com.roomedia.babbab.ui.main.alertDialog
 
+import android.Manifest
 import android.content.ContentUris
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.AlertDialog
@@ -28,6 +32,9 @@ import com.roomedia.babbab.ui.main.button.BorderlessTextButton
 import com.roomedia.babbab.ui.main.button.ImageButton
 import com.roomedia.babbab.ui.main.button.ThumbnailButton
 import com.roomedia.babbab.ui.theme.Shapes
+import com.roomedia.babbab.util.checkSelfPermissionCompat
+import com.roomedia.babbab.util.requestPermissionsCompat
+import timber.log.Timber
 import java.io.File
 
 interface ImagePopupInterface {
@@ -55,7 +62,7 @@ interface ImagePopupInterface {
         )
     }
 
-    fun Context.getRecentPhotoUriList(): List<Uri?> {
+    fun AppCompatActivity.getRecentPhotoUriList(): List<Uri?> {
         val uriList = mutableListOf<Uri?>()
         val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val projection = arrayOf(
@@ -64,17 +71,39 @@ interface ImagePopupInterface {
         )
         val sortOrder =
             MediaStore.Images.Media.DATE_ADDED + " DESC LIMIT $RECENT_PHOTO_COUNT"
-        contentResolver.query(contentUri, projection, null, null, sortOrder)?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            while (cursor.moveToNext()) {
-                uriList += ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
+        try {
+            contentResolver.query(contentUri, projection, null, null, sortOrder)?.use { cursor ->
+                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                while (cursor.moveToNext()) {
+                    uriList += ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
+                }
+            }
+        } catch (exception: Exception) {
+            if (checkSelfPermissionCompat(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                requestPermissionsCompat(
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                    PERMISSION_REQUEST_READ_STORAGE
+                )
+            } else {
+                Timber.e(exception)
             }
         }
         return uriList + arrayOfNulls(RECENT_PHOTO_COUNT - uriList.size)
     }
 
+    fun Context.onRequestReadStoragePermissionsResult(requestCode: Int, grantResults: IntArray) {
+        when {
+            requestCode != PERMISSION_REQUEST_READ_STORAGE -> return
+            grantResults.all { it == PackageManager.PERMISSION_GRANTED } -> return
+            else -> {
+                Toast.makeText(this, R.string.read_storage_permission_denied, Toast.LENGTH_LONG)
+                    .show()
+            }
+        }
+    }
+
     @Composable
-    fun Context.ImagePopupContent() {
+    fun AppCompatActivity.ImagePopupContent() {
         Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -131,7 +160,7 @@ interface ImagePopupInterface {
     }
 
     @Composable
-    fun Context.ImagePopup(
+    fun AppCompatActivity.ImagePopup(
         showDialog: MutableState<Boolean>,
         onConfirm: () -> Unit,
         title: String,
@@ -165,7 +194,7 @@ interface ImagePopupInterface {
     }
 
     @Composable
-    fun Context.ImagePopup(
+    fun AppCompatActivity.ImagePopup(
         showDialog: MutableState<Boolean>,
         onConfirm: () -> Unit,
         @StringRes titleId: Int,
@@ -179,5 +208,6 @@ interface ImagePopupInterface {
 
     companion object {
         const val RECENT_PHOTO_COUNT = 2
+        const val PERMISSION_REQUEST_READ_STORAGE = 0
     }
 }

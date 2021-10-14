@@ -1,11 +1,8 @@
 package com.roomedia.babbab.ui.main
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -34,8 +31,6 @@ import com.roomedia.babbab.ui.main.screen.Home
 import com.roomedia.babbab.ui.main.screen.Screen
 import com.roomedia.babbab.ui.main.screen.Settings
 import com.roomedia.babbab.ui.theme.BabbabTheme
-import com.roomedia.babbab.util.checkSelfPermissionCompat
-import com.roomedia.babbab.util.requestPermissionsCompat
 import java.util.*
 
 class MainActivity : AppCompatActivity(), Home, Friends, Settings, ActivityCompat.OnRequestPermissionsResultCallback {
@@ -56,12 +51,6 @@ class MainActivity : AppCompatActivity(), Home, Friends, Settings, ActivityCompa
             startActivity(LoginActivity.createIntent(this))
             finish()
             return
-        }
-        if (checkSelfPermissionCompat(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-            requestPermissionsCompat(
-                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                PERMISSION_REQUEST_READ_STORAGE
-            )
         }
         setContent {
             val navController = rememberNavController()
@@ -91,12 +80,6 @@ class MainActivity : AppCompatActivity(), Home, Friends, Settings, ActivityCompa
             finish()
             return
         }
-        if (checkSelfPermissionCompat(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-            requestPermissionsCompat(
-                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                PERMISSION_REQUEST_READ_STORAGE
-            )
-        }
     }
 
     override fun onRequestPermissionsResult(
@@ -105,16 +88,7 @@ class MainActivity : AppCompatActivity(), Home, Friends, Settings, ActivityCompa
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            PERMISSION_REQUEST_READ_STORAGE -> if (grantResults.any { it == PackageManager.PERMISSION_DENIED }) {
-                Toast.makeText(this, "R.string.read_storage_permission_denied", Toast.LENGTH_LONG)
-                    .show()
-            }
-        }
-    }
-
-    companion object {
-        const val PERMISSION_REQUEST_READ_STORAGE = 0
+        onRequestReadStoragePermissionsResult(requestCode, grantResults)
     }
 }
 
