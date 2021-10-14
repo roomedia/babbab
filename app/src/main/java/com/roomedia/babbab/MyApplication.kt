@@ -23,5 +23,6 @@ class MyApplication : Application() {
                 Timber.d(task.result)
             }
         }
+        BabbabPreferences.init(this)
     }
 }
